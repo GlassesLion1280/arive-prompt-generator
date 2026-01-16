@@ -9,7 +9,7 @@ export type GachaMode = 'person' | 'background' | 'texture';
 const GACHA_CONFIG = {
   person: {
     // 必須カテゴリ（必ず1つ選ぶ）
-    required: ['gender-count', 'age', 'clothing-genre'],
+    required: ['gender-count', 'age', 'shot-size', 'clothing-genre'],
     // オプショナルカテゴリ（ランダムで選ぶ）
     optional: ['hairstyle', 'hair-color', 'clothing-color', 'pose', 'gaze', 'body-type', 'accessory'],
     // オプショナルから選ぶ数
