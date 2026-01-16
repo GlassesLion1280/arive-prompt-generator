@@ -8,13 +8,13 @@ export function TemplatesPanel() {
   const [selectedCategory, setSelectedCategory] = useState<PresetTemplate['category']>('settings');
 
   const handleLoadTemplate = (template: PresetTemplate) => {
-    // 「共通設定」カテゴリのテンプレートは現在のモデルを保持してオプションのみマージ
-    // また、サムネイルモデル選択中は常にモデルを保持してオプションのみマージ
-    if (template.category === 'settings' || selectedModel === 'nanobanana-thumb') {
+    // 現在選択中のモデルを維持してオプションのみ適用
+    // 「共通設定」カテゴリはマージ、それ以外は置き換え
+    if (template.category === 'settings') {
       mergeOptions(template.selectedOptions);
     } else {
       loadFromFavorite({
-        selectedModel: template.selectedModel,
+        selectedModel: selectedModel, // 現在のモデルを維持
         selectedOptions: template.selectedOptions,
         outputLanguage: template.outputLanguage,
         freeText: template.freeText,
