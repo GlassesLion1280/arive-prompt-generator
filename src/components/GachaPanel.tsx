@@ -1,27 +1,40 @@
 import { useState } from 'react';
 import { usePromptStore } from '../store/promptStore';
 import { runGacha, getGachaModeLabel, getGachaModeIcon, type GachaMode } from '../utils/gachaGenerator';
+import { getCategoryById } from '../data/categories';
 
 const GACHA_MODES: GachaMode[] = ['person', 'background', 'texture'];
 
 export function GachaPanel() {
   const [selectedMode, setSelectedMode] = useState<GachaMode>('person');
   const [isSpinning, setIsSpinning] = useState(false);
-  const { setSelectedOptions, resetAllSelections } = usePromptStore();
+  const { setSelectedOptions, selectedOptions } = usePromptStore();
 
   const handleGacha = () => {
     setIsSpinning(true);
 
     // アニメーション効果のため少し遅延
     setTimeout(() => {
-      // 既存の選択をリセット
-      resetAllSelections();
+      // 共通設定（common）を保持
+      const preservedOptions: Record<string, string[]> = {};
+      for (const [categoryId, optionIds] of Object.entries(selectedOptions)) {
+        const category = getCategoryById(categoryId);
+        if (category?.mainCategoryId === 'common') {
+          preservedOptions[categoryId] = optionIds;
+        }
+      }
 
       // ガチャを実行
-      const result = runGacha(selectedMode);
+      const gachaResult = runGacha(selectedMode);
+
+      // 共通設定を維持しつつガチャ結果をマージ
+      const mergedOptions = {
+        ...preservedOptions,
+        ...gachaResult,
+      };
 
       // 結果をストアに反映
-      setSelectedOptions(result);
+      setSelectedOptions(mergedOptions);
 
       setIsSpinning(false);
     }, 500);
