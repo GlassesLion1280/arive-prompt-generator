@@ -10,6 +10,7 @@ import { ImageCountSelector } from './components/ImageCountSelector';
 import { FavoritesPanel } from './components/FavoritesPanel';
 import { TemplatesPanel } from './components/TemplatesPanel';
 import { ThumbnailTextInput } from './components/ThumbnailTextInput';
+import { GachaPanel } from './components/GachaPanel';
 import { GiraGiraPage } from './pages/GiraGiraPage';
 
 type AppPage = 'generator' | 'giragira';
@@ -72,6 +73,7 @@ function App() {
                 <FreeTextInput />
               </div>
               <div className="space-y-4">
+                <GachaPanel />
                 <PromptOutput />
                 <FavoritesPanel />
                 <TemplatesPanel />

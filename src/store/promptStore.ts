@@ -42,6 +42,7 @@ interface PromptState {
   // Actions
   setSelectedModel: (model: AIModelId) => void;
   toggleOption: (categoryId: string, optionId: string) => void;
+  setSelectedOptions: (options: SelectedOptions) => void;  // ガチャ用：一括設定
   setActiveMainCategory: (category: MainCategoryId) => void;
   toggleSubCategory: (categoryId: string) => void;
   resetAllSelections: () => void;
@@ -166,6 +167,15 @@ export const usePromptStore = create<PromptState>()(
 
         set({
           selectedOptions: newOptions,
+          generatedPrompt: newPrompt,
+        });
+      },
+
+      setSelectedOptions: (options) => {
+        const state = get();
+        const newPrompt = regeneratePrompt({ ...state, selectedOptions: options });
+        set({
+          selectedOptions: options,
           generatedPrompt: newPrompt,
         });
       },
