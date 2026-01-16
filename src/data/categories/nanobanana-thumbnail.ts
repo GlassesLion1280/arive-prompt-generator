@@ -5,6 +5,26 @@ import type { SubCategory } from '../../types';
 
 export const NANOBANANA_THUMBNAIL_CATEGORIES: SubCategory[] = [
   {
+    id: 'nano-character-type',
+    mainCategoryId: 'thumbnail',
+    label: 'Character Type',
+    labelJa: 'キャラクタータイプ',
+    order: 0,
+    promptOrder: 0,
+    options: [
+      { id: 'nano-char-realistic', labelJa: 'リアル人物', promptEn: 'realistic person, photorealistic', promptJa: 'リアルな人物、フォトリアリスティック' },
+      { id: 'nano-char-vtuber', labelJa: 'VTuber風', promptEn: 'VTuber style, anime avatar, virtual YouTuber character', promptJa: 'VTuber風、アニメアバター、バーチャルYouTuberキャラクター' },
+      { id: 'nano-char-yukkuri', labelJa: 'ゆっくり風', promptEn: 'Yukkuri style character, cute round face, simple cartoon style', promptJa: 'ゆっくり風キャラクター、かわいい丸顔、シンプルな漫画スタイル' },
+      { id: 'nano-char-anime', labelJa: 'アニメ風', promptEn: 'anime style character, 2D anime art', promptJa: 'アニメ風キャラクター、2Dアニメアート' },
+      { id: 'nano-char-chibi', labelJa: 'ちびキャラ', promptEn: 'chibi character, super deformed, SD character', promptJa: 'ちびキャラ、デフォルメ、SDキャラ' },
+      { id: 'nano-char-flatillust', labelJa: 'フラットイラスト', promptEn: 'flat illustration style, simple vector art, clean minimal character', promptJa: 'フラットイラスト、シンプルなベクターアート、クリーンなキャラ' },
+      { id: 'nano-char-manga', labelJa: '漫画風', promptEn: 'manga style, comic book style', promptJa: '漫画風、コミックスタイル' },
+      { id: 'nano-char-3d', labelJa: '3DCG風', promptEn: '3D CG rendered character, 3D model', promptJa: '3DCGキャラクター、3Dモデル' },
+      { id: 'nano-char-pixel', labelJa: 'ドット絵風', promptEn: 'pixel art character, retro game style', promptJa: 'ドット絵キャラ、レトロゲームスタイル' },
+      { id: 'nano-char-idol', labelJa: 'アイドル風', promptEn: 'idol style, cute idol character', promptJa: 'アイドル風、かわいいアイドルキャラ' },
+    ],
+  },
+  {
     id: 'nano-thumb-type',
     mainCategoryId: 'thumbnail',
     label: 'Thumbnail Type',

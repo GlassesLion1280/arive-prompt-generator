@@ -23,7 +23,13 @@ export function TemplatesPanel() {
     }
   };
 
-  const filteredTemplates = PRESET_TEMPLATES.filter((t) => t.category === selectedCategory);
+  // カテゴリでフィルタ + モデル指定があるテンプレートは現在のモデルと一致時のみ表示
+  const filteredTemplates = PRESET_TEMPLATES.filter((t) => {
+    if (t.category !== selectedCategory) return false;
+    // selectedModelが設定されているテンプレートは、現在のモデルと一致時のみ表示
+    if (t.selectedModel && t.selectedModel !== selectedModel) return false;
+    return true;
+  });
 
   return (
     <div className="bg-white rounded-xl shadow-sm border border-gray-200">
