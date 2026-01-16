@@ -1151,13 +1151,13 @@ export const PRESET_TEMPLATES: PresetTemplate[] = [
     showNegativePrompt: false,
   },
   {
-    id: 'tmpl-irasutoya-2ch',
-    name: 'いらすとや風2ch',
-    description: 'いらすとや風キャラで2chまとめ',
+    id: 'tmpl-flat-2ch',
+    name: 'フラットイラスト2ch',
+    description: 'シンプルイラストで2chまとめ',
     category: 'creative',
     selectedModel: 'nanobanana-thumb',
     selectedOptions: {
-      'character-type': ['char-irasutoya'],
+      'character-type': ['char-flatillust'],
       'gender-count': ['gender-group'],
       'pose': ['pose-natural'],
       'bg-type': ['bgt-solid'],
@@ -1166,7 +1166,7 @@ export const PRESET_TEMPLATES: PresetTemplate[] = [
       'aspect-ratio': ['ar-16-9'],
     },
     outputLanguage: 'en',
-    freeText: 'irasutoya style illustration, simple flat characters, 2ch matome thumbnail, speech bubbles, conversation layout',
+    freeText: 'flat illustration style, simple vector characters, 2ch matome thumbnail, speech bubbles, conversation layout',
     showNegativePrompt: false,
   },
   {
@@ -1176,7 +1176,7 @@ export const PRESET_TEMPLATES: PresetTemplate[] = [
     category: 'creative',
     selectedModel: 'nanobanana-thumb',
     selectedOptions: {
-      'character-type': ['char-irasutoya'],
+      'character-type': ['char-flatillust'],
       'gender-count': ['gender-man-1'],
       'pose': ['pose-surprise'],
       'imp-emotion': ['emo-surprise'],

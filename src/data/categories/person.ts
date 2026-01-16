@@ -34,7 +34,7 @@ export const PERSON_CATEGORIES: SubCategory[] = [
       { id: 'char-yukkuri', labelJa: 'ゆっくり風', promptEn: 'Yukkuri style character, cute round face, simple cartoon style' },
       { id: 'char-anime', labelJa: 'アニメ風', promptEn: 'anime style character, 2D anime art' },
       { id: 'char-chibi', labelJa: 'ちびキャラ', promptEn: 'chibi character, super deformed, SD character' },
-      { id: 'char-irasutoya', labelJa: 'いらすとや風', promptEn: 'irasutoya style, simple flat illustration, Japanese clip art style' },
+      { id: 'char-flatillust', labelJa: 'フラットイラスト', promptEn: 'flat illustration style, simple vector art, clean minimal character' },
       { id: 'char-manga', labelJa: '漫画風', promptEn: 'manga style, comic book style' },
       { id: 'char-3d', labelJa: '3DCG風', promptEn: '3D CG rendered character, 3D model' },
       { id: 'char-pixel', labelJa: 'ドット絵風', promptEn: 'pixel art character, retro game style' },
