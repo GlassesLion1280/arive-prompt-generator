@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
 import { usePromptStore } from '../store/promptStore';
 import { runGacha, getGachaModeLabel, getGachaModeIcon, type GachaMode } from '../utils/gachaGenerator';
 import { getCategoryById } from '../data/categories';
@@ -17,25 +17,59 @@ export function GachaPanel() {
   const [selectedMode, setSelectedMode] = useState<GachaMode>('person');
   const [isSpinning, setIsSpinning] = useState(false);
   const [lockSelected, setLockSelected] = useState(false);
+  // 固定をONにした時点の選択状態を記憶
+  const [lockedSnapshot, setLockedSnapshot] = useState<SelectedOptions>({});
   const { setSelectedOptions, selectedOptions } = usePromptStore();
 
   // 現在のモードに関連する選択済みオプションを取得
-  const getLockedOptionsForMode = (): SelectedOptions => {
-    const locked: SelectedOptions = {};
+  const getOptionsForMode = useCallback((options: SelectedOptions): SelectedOptions => {
+    const filtered: SelectedOptions = {};
     const targetMainCategory = MODE_TO_MAIN_CATEGORY[selectedMode];
 
-    for (const [categoryId, optionIds] of Object.entries(selectedOptions)) {
+    for (const [categoryId, optionIds] of Object.entries(options)) {
       const category = getCategoryById(categoryId);
       if (category?.mainCategoryId === targetMainCategory && optionIds.length > 0) {
-        locked[categoryId] = optionIds;
+        filtered[categoryId] = optionIds;
       }
     }
-    return locked;
+    return filtered;
+  }, [selectedMode]);
+
+  // 固定中の項目数を取得（スナップショットから）
+  const getLockedCount = (): number => {
+    if (!lockSelected) return 0;
+    return Object.keys(lockedSnapshot).length;
   };
 
-  // 現在のモードで選択済みの項目数を取得
-  const getLockedCount = (): number => {
-    return Object.keys(getLockedOptionsForMode()).length;
+  // 固定トグルの切り替え
+  const handleToggleLock = () => {
+    if (!lockSelected) {
+      // ONにする時：現在の選択状態をスナップショットとして保存
+      const currentModeOptions = getOptionsForMode(selectedOptions);
+      setLockedSnapshot(currentModeOptions);
+    } else {
+      // OFFにする時：スナップショットをクリア
+      setLockedSnapshot({});
+    }
+    setLockSelected(!lockSelected);
+  };
+
+  // モード変更時にスナップショットを更新
+  const handleModeChange = (mode: GachaMode) => {
+    setSelectedMode(mode);
+    if (lockSelected) {
+      // モードが変わったら、新しいモードの選択状態でスナップショットを更新
+      const newModeOptions: SelectedOptions = {};
+      const targetMainCategory = MODE_TO_MAIN_CATEGORY[mode];
+
+      for (const [categoryId, optionIds] of Object.entries(selectedOptions)) {
+        const category = getCategoryById(categoryId);
+        if (category?.mainCategoryId === targetMainCategory && optionIds.length > 0) {
+          newModeOptions[categoryId] = optionIds;
+        }
+      }
+      setLockedSnapshot(newModeOptions);
+    }
   };
 
   const handleGacha = () => {
@@ -52,8 +86,8 @@ export function GachaPanel() {
         }
       }
 
-      // 固定オプションを取得（lockSelectedがONの場合のみ）
-      const lockedOptions = lockSelected ? getLockedOptionsForMode() : undefined;
+      // 固定オプションを取得（lockSelectedがONの場合、スナップショットを使用）
+      const lockedOptions = lockSelected ? lockedSnapshot : undefined;
 
       // ガチャを実行
       const gachaResult = runGacha(selectedMode, lockedOptions);
@@ -83,7 +117,7 @@ export function GachaPanel() {
         {GACHA_MODES.map((mode) => (
           <button
             key={mode}
-            onClick={() => setSelectedMode(mode)}
+            onClick={() => handleModeChange(mode)}
             className={`
               flex-1 py-2 px-3 rounded-lg text-sm font-medium transition-all
               ${
@@ -102,7 +136,7 @@ export function GachaPanel() {
       {/* 選択済み固定トグル */}
       <div className="mb-3">
         <button
-          onClick={() => setLockSelected(!lockSelected)}
+          onClick={handleToggleLock}
           className={`
             w-full flex items-center justify-between px-3 py-2 rounded-lg text-sm transition-all
             ${lockSelected
@@ -116,12 +150,17 @@ export function GachaPanel() {
             <span>選択済みを固定</span>
           </span>
           <span className={`text-xs px-2 py-0.5 rounded-full ${lockSelected ? 'bg-amber-200 text-amber-800' : 'bg-gray-100 text-gray-500'}`}>
-            {getLockedCount()}件固定中
+            {lockSelected ? `${getLockedCount()}件固定中` : '未設定'}
           </span>
         </button>
         {lockSelected && getLockedCount() > 0 && (
           <p className="text-xs text-amber-600 mt-1 pl-1">
-            選択済みの項目はガチャで変更されません
+            固定ONにした時点の{getLockedCount()}項目を維持します
+          </p>
+        )}
+        {lockSelected && getLockedCount() === 0 && (
+          <p className="text-xs text-gray-500 mt-1 pl-1">
+            先に固定したい項目を選んでからONにしてください
           </p>
         )}
       </div>
