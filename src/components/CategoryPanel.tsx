@@ -6,7 +6,7 @@ import { getMainCategoriesForModel, getCategoriesByMain } from '../data/categori
 import type { MainCategoryId } from '../types';
 
 export function CategoryPanel() {
-  const { activeMainCategory, setActiveMainCategory, selectedModel, selectedOptions } = usePromptStore();
+  const { activeMainCategory, setActiveMainCategory, selectedModel, selectedOptions, expandedSubCategories, collapseAllSubCategories } = usePromptStore();
 
   // モデル別のメインカテゴリを取得
   const mainCategories = getMainCategoriesForModel(selectedModel);
@@ -51,16 +51,32 @@ export function CategoryPanel() {
 
   const subCategories = getCategoriesByMain(activeMainCategory, selectedModel);
 
+  // 現在のメインカテゴリで開いているサブカテゴリの数
+  const openedCount = subCategories.filter((cat) => expandedSubCategories.includes(cat.id)).length;
+
   return (
     <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-200">
-      <h2 className="text-sm font-medium text-gray-500 mb-3">
-        カテゴリ選択
-        {selectedModel === 'nanobanana-thumb' && (
-          <span className="ml-2 text-xs text-orange-600 bg-orange-50 px-2 py-0.5 rounded">
-            Nanobanana Pro専用
-          </span>
+      <div className="flex items-center justify-between mb-3">
+        <h2 className="text-sm font-medium text-gray-500">
+          カテゴリ選択
+          {selectedModel === 'nanobanana-thumb' && (
+            <span className="ml-2 text-xs text-orange-600 bg-orange-50 px-2 py-0.5 rounded">
+              Nanobanana Pro専用
+            </span>
+          )}
+        </h2>
+        {openedCount > 0 && (
+          <button
+            onClick={collapseAllSubCategories}
+            className="text-xs text-gray-500 hover:text-gray-700 flex items-center gap-1 px-2 py-1 rounded hover:bg-gray-100 transition-colors"
+          >
+            <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" />
+            </svg>
+            すべて閉じる
+          </button>
         )}
-      </h2>
+      </div>
 
       <Tab
         items={mainCategoryItems}
@@ -68,7 +84,7 @@ export function CategoryPanel() {
         onSelect={(id) => setActiveMainCategory(id as MainCategoryId)}
       />
 
-      <div className="mt-4 space-y-2 max-h-[500px] overflow-y-auto">
+      <div className="mt-4 space-y-2 max-h-[600px] overflow-y-auto">
         {subCategories.map((category) => (
           <SubCategoryAccordion key={category.id} category={category} />
         ))}

@@ -45,6 +45,7 @@ interface PromptState {
   setSelectedOptions: (options: SelectedOptions) => void;  // ガチャ用：一括設定
   setActiveMainCategory: (category: MainCategoryId) => void;
   toggleSubCategory: (categoryId: string) => void;
+  collapseAllSubCategories: () => void;
   resetAllSelections: () => void;
   resetCategorySelections: (categoryId: string) => void;
   setOutputLanguage: (lang: OutputLanguage) => void;
@@ -193,6 +194,10 @@ export const usePromptStore = create<PromptState>()(
             ? expandedSubCategories.filter((id) => id !== categoryId)
             : [...expandedSubCategories, categoryId],
         });
+      },
+
+      collapseAllSubCategories: () => {
+        set({ expandedSubCategories: [] });
       },
 
       resetAllSelections: () => {

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { MainLayout } from './components/layout/MainLayout';
 import { ModelSelector } from './components/ModelSelector';
 import { CategoryPanel } from './components/CategoryPanel';
@@ -17,12 +17,26 @@ type AppPage = 'generator' | 'giragira';
 
 function App() {
   const [currentPage, setCurrentPage] = useState<AppPage>('generator');
+  const [showScrollTop, setShowScrollTop] = useState(false);
+
+  // スクロール位置を監視してトップへ戻るボタンの表示を制御
+  useEffect(() => {
+    const handleScroll = () => {
+      setShowScrollTop(window.scrollY > 300);
+    };
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
+
+  const scrollToTop = () => {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
 
   return (
     <>
       {/* グローバルナビゲーション */}
       <div className="bg-white border-b border-gray-200 sticky top-0 z-50">
-        <div className="max-w-7xl mx-auto px-4">
+        <div className="max-w-[1600px] mx-auto px-4">
           <div className="flex items-center gap-1">
             <button
               onClick={() => setCurrentPage('generator')}
@@ -56,6 +70,7 @@ function App() {
       {currentPage === 'generator' ? (
         <MainLayout>
           <div className="space-y-4">
+            {/* 上部：モデル選択と設定 */}
             <ModelSelector />
 
             <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-200">
@@ -66,23 +81,42 @@ function App() {
               </div>
             </div>
 
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-              <div className="space-y-4">
+            {/* メインコンテンツ：3カラム（大画面）/ 2カラム（中画面）/ 1カラム（小画面）*/}
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
+              {/* 左カラム：カテゴリ選択（スクロール可能） */}
+              <div className="lg:col-span-7 xl:col-span-8 space-y-4">
                 <ThumbnailTextInput />
                 <CategoryPanel />
                 <FreeTextInput />
               </div>
-              <div className="space-y-4">
-                <GachaPanel />
-                <PromptOutput />
-                <FavoritesPanel />
-                <TemplatesPanel />
+
+              {/* 右カラム：ガチャ・出力・お気に入り（Sticky） */}
+              <div className="lg:col-span-5 xl:col-span-4">
+                <div className="lg:sticky lg:top-20 space-y-4 max-h-[calc(100vh-6rem)] lg:overflow-y-auto lg:pb-4">
+                  <GachaPanel />
+                  <PromptOutput />
+                  <FavoritesPanel />
+                  <TemplatesPanel />
+                </div>
               </div>
             </div>
           </div>
         </MainLayout>
       ) : (
         <GiraGiraPage />
+      )}
+
+      {/* フローティング「トップへ戻る」ボタン */}
+      {showScrollTop && currentPage === 'generator' && (
+        <button
+          onClick={scrollToTop}
+          className="fixed bottom-6 right-6 z-40 w-12 h-12 bg-blue-500 hover:bg-blue-600 text-white rounded-full shadow-lg hover:shadow-xl transition-all flex items-center justify-center"
+          aria-label="トップへ戻る"
+        >
+          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 10l7-7m0 0l7 7m-7-7v18" />
+          </svg>
+        </button>
       )}
     </>
   );
