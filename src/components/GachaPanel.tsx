@@ -2,13 +2,41 @@ import { useState } from 'react';
 import { usePromptStore } from '../store/promptStore';
 import { runGacha, getGachaModeLabel, getGachaModeIcon, type GachaMode } from '../utils/gachaGenerator';
 import { getCategoryById } from '../data/categories';
+import type { SelectedOptions } from '../types';
 
 const GACHA_MODES: GachaMode[] = ['person', 'background', 'texture'];
+
+// モードに対応するmainCategoryId
+const MODE_TO_MAIN_CATEGORY: Record<GachaMode, string> = {
+  person: 'person',
+  background: 'background',
+  texture: 'texture',
+};
 
 export function GachaPanel() {
   const [selectedMode, setSelectedMode] = useState<GachaMode>('person');
   const [isSpinning, setIsSpinning] = useState(false);
+  const [lockSelected, setLockSelected] = useState(false);
   const { setSelectedOptions, selectedOptions } = usePromptStore();
+
+  // 現在のモードに関連する選択済みオプションを取得
+  const getLockedOptionsForMode = (): SelectedOptions => {
+    const locked: SelectedOptions = {};
+    const targetMainCategory = MODE_TO_MAIN_CATEGORY[selectedMode];
+
+    for (const [categoryId, optionIds] of Object.entries(selectedOptions)) {
+      const category = getCategoryById(categoryId);
+      if (category?.mainCategoryId === targetMainCategory && optionIds.length > 0) {
+        locked[categoryId] = optionIds;
+      }
+    }
+    return locked;
+  };
+
+  // 現在のモードで選択済みの項目数を取得
+  const getLockedCount = (): number => {
+    return Object.keys(getLockedOptionsForMode()).length;
+  };
 
   const handleGacha = () => {
     setIsSpinning(true);
@@ -24,8 +52,11 @@ export function GachaPanel() {
         }
       }
 
+      // 固定オプションを取得（lockSelectedがONの場合のみ）
+      const lockedOptions = lockSelected ? getLockedOptionsForMode() : undefined;
+
       // ガチャを実行
-      const gachaResult = runGacha(selectedMode);
+      const gachaResult = runGacha(selectedMode, lockedOptions);
 
       // 共通設定を維持しつつガチャ結果をマージ
       const mergedOptions = {
@@ -66,6 +97,33 @@ export function GachaPanel() {
             {getGachaModeLabel(mode)}
           </button>
         ))}
+      </div>
+
+      {/* 選択済み固定トグル */}
+      <div className="mb-3">
+        <button
+          onClick={() => setLockSelected(!lockSelected)}
+          className={`
+            w-full flex items-center justify-between px-3 py-2 rounded-lg text-sm transition-all
+            ${lockSelected
+              ? 'bg-amber-100 border-2 border-amber-400 text-amber-700'
+              : 'bg-white border border-purple-200 text-gray-600 hover:bg-purple-50'
+            }
+          `}
+        >
+          <span className="flex items-center gap-2">
+            <span>{lockSelected ? '🔒' : '🔓'}</span>
+            <span>選択済みを固定</span>
+          </span>
+          <span className={`text-xs px-2 py-0.5 rounded-full ${lockSelected ? 'bg-amber-200 text-amber-800' : 'bg-gray-100 text-gray-500'}`}>
+            {getLockedCount()}件固定中
+          </span>
+        </button>
+        {lockSelected && getLockedCount() > 0 && (
+          <p className="text-xs text-amber-600 mt-1 pl-1">
+            選択済みの項目はガチャで変更されません
+          </p>
+        )}
       </div>
 
       {/* ガチャボタン */}

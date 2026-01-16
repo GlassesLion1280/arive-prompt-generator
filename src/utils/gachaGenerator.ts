@@ -70,12 +70,20 @@ function pickRandomMultiple<T>(array: T[], count: number): T[] {
 }
 
 // ガチャを実行してSelectedOptionsを生成
-export function runGacha(mode: GachaMode): SelectedOptions {
+// lockedOptions: 固定するオプション（これらのカテゴリはガチャで変更されない）
+export function runGacha(mode: GachaMode, lockedOptions?: SelectedOptions): SelectedOptions {
   const config = GACHA_CONFIG[mode];
   const result: SelectedOptions = {};
 
-  // 必須カテゴリから選択
+  // 固定されているカテゴリIDのセット
+  const lockedCategoryIds = new Set(Object.keys(lockedOptions || {}));
+
+  // 必須カテゴリから選択（ただし固定されている場合はスキップ）
   for (const categoryId of config.required) {
+    if (lockedCategoryIds.has(categoryId)) {
+      // 固定されているのでスキップ（後でlockedOptionsからコピー）
+      continue;
+    }
     const category = config.categories.find((c) => c.id === categoryId);
     if (category && category.options.length > 0) {
       const option = pickRandom(category.options);
@@ -83,14 +91,22 @@ export function runGacha(mode: GachaMode): SelectedOptions {
     }
   }
 
-  // オプショナルカテゴリからランダムに選択
-  const selectedOptionalCategories = pickRandomMultiple(config.optional, config.optionalCount);
+  // オプショナルカテゴリからランダムに選択（固定されていないものだけ）
+  const availableOptional = config.optional.filter((catId) => !lockedCategoryIds.has(catId));
+  const selectedOptionalCategories = pickRandomMultiple(availableOptional, config.optionalCount);
 
   for (const categoryId of selectedOptionalCategories) {
     const category = config.categories.find((c) => c.id === categoryId);
     if (category && category.options.length > 0) {
       const option = pickRandom(category.options);
       result[categoryId] = [option.id];
+    }
+  }
+
+  // 固定オプションをマージ（固定が優先）
+  if (lockedOptions) {
+    for (const [categoryId, optionIds] of Object.entries(lockedOptions)) {
+      result[categoryId] = optionIds;
     }
   }
 
