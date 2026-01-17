@@ -1,0 +1,285 @@
+import { useState, useMemo, useCallback } from 'react';
+import { MainLayout } from '../components/layout/MainLayout';
+import { ModelSelector } from '../components/ModelSelector';
+import { Accordion } from '../components/common/Accordion';
+import { usePromptStore } from '../store/promptStore';
+import {
+  DIAGRAM_TEMPLATES,
+  DIAGRAM_CATEGORY_LABELS,
+  getAllDiagramCategories,
+  getTemplatesByCategory,
+} from '../data/diagramTemplates';
+import type { DiagramCategory, DiagramTemplate } from '../data/diagramTemplates';
+
+export function DiagramTemplatePage() {
+  const [selectedTemplate, setSelectedTemplate] = useState<DiagramTemplate | null>(null);
+  const [titleText, setTitleText] = useState('');
+  const [subText, setSubText] = useState('');
+  const [expandedCategories, setExpandedCategories] = useState<DiagramCategory[]>([]);
+  const { selectedModel } = usePromptStore();
+
+  // Nanobanana Pro以外は使用不可
+  const isEnabled = selectedModel === 'nanobanana-thumb';
+
+  // プロンプト生成
+  const generatedPrompt = useMemo(() => {
+    if (!selectedTemplate) return '';
+
+    const parts: string[] = [];
+
+    // テンプレートのプロンプト
+    parts.push(selectedTemplate.promptEn);
+
+    // タイトルテキスト
+    if (titleText.trim()) {
+      parts.push(`title text "${titleText.trim()}"`);
+    }
+
+    // サブテキスト
+    if (subText.trim()) {
+      parts.push(`subtitle "${subText.trim()}"`);
+    }
+
+    // 共通の品質指定
+    parts.push('clean professional infographic design, high quality, readable text');
+
+    return parts.join(', ');
+  }, [selectedTemplate, titleText, subText]);
+
+  // アコーディオントグル
+  const toggleCategory = useCallback((category: DiagramCategory) => {
+    setExpandedCategories((prev) =>
+      prev.includes(category)
+        ? prev.filter((c) => c !== category)
+        : [...prev, category]
+    );
+  }, []);
+
+  // 全て閉じる
+  const collapseAll = useCallback(() => {
+    setExpandedCategories([]);
+  }, []);
+
+  // リセット
+  const resetAll = useCallback(() => {
+    setSelectedTemplate(null);
+    setTitleText('');
+    setSubText('');
+  }, []);
+
+  // コピー
+  const copyPrompt = useCallback(() => {
+    if (generatedPrompt) {
+      navigator.clipboard.writeText(generatedPrompt);
+    }
+  }, [generatedPrompt]);
+
+  // カテゴリ一覧
+  const categories = getAllDiagramCategories();
+
+  // 開いているカテゴリ数
+  const openedCount = expandedCategories.length;
+
+  return (
+    <MainLayout>
+      <div className="space-y-4">
+        {/* モデル選択 */}
+        <ModelSelector />
+
+        {/* Nanobanana Pro以外の場合は警告表示 */}
+        {!isEnabled && (
+          <div className="bg-amber-50 border border-amber-200 rounded-xl p-4">
+            <div className="flex items-start gap-3">
+              <svg className="w-5 h-5 text-amber-500 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+              </svg>
+              <div>
+                <h3 className="text-sm font-medium text-amber-800">
+                  Nanobanana Pro専用機能です
+                </h3>
+                <p className="text-xs text-amber-600 mt-1">
+                  図解テンプレート機能を使用するには、モデル選択で「Nanobanana Pro (サムネイル)」を選択してください。
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
+
+
+        {/* メインコンテンツ */}
+        <div className={`grid grid-cols-1 lg:grid-cols-12 gap-4 ${!isEnabled ? 'opacity-50 pointer-events-none' : ''}`}>
+          {/* 左カラム：テンプレート選択 */}
+          <div className="lg:col-span-7 xl:col-span-8 space-y-4">
+            {/* テキスト入力 */}
+            <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-200">
+              <h2 className="text-sm font-medium text-gray-500 mb-3">テキスト入力</h2>
+              <div className="space-y-3">
+                <div>
+                  <label className="block text-xs text-gray-500 mb-1">
+                    タイトル（メイン見出し）
+                  </label>
+                  <input
+                    type="text"
+                    value={titleText}
+                    onChange={(e) => setTitleText(e.target.value)}
+                    placeholder="例: 3つのポイント"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs text-gray-500 mb-1">
+                    サブテキスト（補足、任意）
+                  </label>
+                  <input
+                    type="text"
+                    value={subText}
+                    onChange={(e) => setSubText(e.target.value)}
+                    placeholder="例: 成功の秘訣を解説"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* テンプレート選択パネル */}
+            <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-200">
+              <div className="flex items-center justify-between mb-3">
+                <h2 className="text-sm font-medium text-gray-500">
+                  テンプレート選択
+                  <span className="ml-2 text-xs text-purple-600 bg-purple-50 px-2 py-0.5 rounded">
+                    {DIAGRAM_TEMPLATES.length}種類
+                  </span>
+                </h2>
+                {openedCount > 0 && (
+                  <button
+                    onClick={collapseAll}
+                    className="text-xs text-gray-500 hover:text-gray-700 flex items-center gap-1 px-2 py-1 rounded hover:bg-gray-100 transition-colors"
+                  >
+                    <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" />
+                    </svg>
+                    すべて閉じる
+                  </button>
+                )}
+              </div>
+
+              <div className="space-y-2 max-h-[500px] overflow-y-auto">
+                {categories.map((category) => {
+                  const templates = getTemplatesByCategory(category);
+                  const isOpen = expandedCategories.includes(category);
+                  const categoryLabel = DIAGRAM_CATEGORY_LABELS[category];
+
+                  return (
+                    <Accordion
+                      key={category}
+                      title={`${categoryLabel.ja} (${templates.length})`}
+                      isOpen={isOpen}
+                      onToggle={() => toggleCategory(category)}
+                    >
+                      <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                        {templates.map((template) => {
+                          const isSelected = selectedTemplate?.id === template.id;
+                          return (
+                            <button
+                              key={template.id}
+                              onClick={() => setSelectedTemplate(isSelected ? null : template)}
+                              className={`
+                                p-2 rounded-lg text-xs text-left transition-all
+                                ${isSelected
+                                  ? 'bg-purple-500 text-white shadow-md'
+                                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200 border border-gray-200'
+                                }
+                              `}
+                            >
+                              <div className="font-medium truncate">{template.labelJa}</div>
+                              <div className={`text-[10px] mt-0.5 truncate ${isSelected ? 'text-purple-100' : 'text-gray-500'}`}>
+                                {template.description}
+                              </div>
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </Accordion>
+                  );
+                })}
+              </div>
+            </div>
+          </div>
+
+          {/* 右カラム：プロンプト出力 */}
+          <div className="lg:col-span-5 xl:col-span-4">
+            <div className="lg:sticky lg:top-20 space-y-4">
+              {/* 選択中のテンプレート */}
+              {selectedTemplate && (
+                <div className="bg-purple-50 rounded-xl p-4 border border-purple-200">
+                  <h3 className="text-sm font-medium text-purple-700 mb-2">
+                    選択中のテンプレート
+                  </h3>
+                  <div className="bg-white rounded-lg p-3">
+                    <div className="font-medium text-gray-800">{selectedTemplate.labelJa}</div>
+                    <div className="text-xs text-gray-500 mt-1">{selectedTemplate.description}</div>
+                    <div className="text-xs text-purple-600 mt-2">
+                      カテゴリ: {DIAGRAM_CATEGORY_LABELS[selectedTemplate.category].ja}
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* プロンプト出力 */}
+              <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-200">
+                <div className="flex items-center justify-between mb-3">
+                  <h2 className="text-sm font-medium text-gray-500">
+                    生成プロンプト
+                  </h2>
+                  <div className="flex gap-2">
+                    <button
+                      onClick={copyPrompt}
+                      disabled={!generatedPrompt}
+                      className="flex items-center gap-1 px-3 py-1.5 bg-purple-500 text-white text-xs rounded-lg hover:bg-purple-600 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors"
+                    >
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                      </svg>
+                      コピー
+                    </button>
+                    <button
+                      onClick={resetAll}
+                      className="px-3 py-1.5 text-xs text-gray-600 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+                    >
+                      リセット
+                    </button>
+                  </div>
+                </div>
+
+                <div className="bg-gray-50 rounded-lg p-3 min-h-[150px] max-h-[300px] overflow-y-auto">
+                  {generatedPrompt ? (
+                    <p className="text-sm text-gray-700 font-mono whitespace-pre-wrap break-words">
+                      {generatedPrompt}
+                    </p>
+                  ) : (
+                    <p className="text-sm text-gray-400 italic">
+                      テンプレートを選択するとプロンプトが生成されます
+                    </p>
+                  )}
+                </div>
+              </div>
+
+              {/* ヒント */}
+              <div className="bg-purple-50 rounded-xl p-4 border border-purple-200">
+                <h3 className="text-sm font-medium text-purple-700 mb-2">
+                  💡 使い方ヒント
+                </h3>
+                <ul className="text-xs text-purple-600 space-y-1">
+                  <li>• テンプレート + デザインスタイルを組み合わせ</li>
+                  <li>• タイトルは短く明確に</li>
+                  <li>• Nanobanana Proで最適化された出力</li>
+                  <li>• プロンプト生成ページと併用可能</li>
+                </ul>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </MainLayout>
+  );
+}

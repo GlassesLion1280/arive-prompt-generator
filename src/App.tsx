@@ -11,9 +11,12 @@ import { FavoritesPanel } from './components/FavoritesPanel';
 import { TemplatesPanel } from './components/TemplatesPanel';
 import { ThumbnailTextInput } from './components/ThumbnailTextInput';
 import { GachaPanel } from './components/GachaPanel';
+import { HistoryPanel } from './components/HistoryPanel';
 import { GiraGiraPage } from './pages/GiraGiraPage';
+import { MaterialPage } from './pages/MaterialPage';
+import { DiagramTemplatePage } from './pages/DiagramTemplatePage';
 
-type AppPage = 'generator' | 'giragira';
+type AppPage = 'generator' | 'giragira' | 'material' | 'diagram';
 
 function App() {
   const [currentPage, setCurrentPage] = useState<AppPage>('generator');
@@ -37,11 +40,11 @@ function App() {
       {/* グローバルナビゲーション */}
       <div className="bg-white border-b border-gray-200 sticky top-0 z-50">
         <div className="max-w-[1600px] mx-auto px-4">
-          <div className="flex items-center gap-1">
+          <div className="flex items-center gap-1 overflow-x-auto">
             <button
               onClick={() => setCurrentPage('generator')}
               className={`
-                px-4 py-3 text-sm font-medium border-b-2 transition-all
+                px-4 py-3 text-sm font-medium border-b-2 transition-all whitespace-nowrap
                 ${currentPage === 'generator'
                   ? 'border-blue-500 text-blue-600'
                   : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
@@ -51,23 +54,47 @@ function App() {
               プロンプト生成
             </button>
             <button
+              onClick={() => setCurrentPage('material')}
+              className={`
+                px-4 py-3 text-sm font-medium border-b-2 transition-all whitespace-nowrap
+                ${currentPage === 'material'
+                  ? 'border-emerald-500 text-emerald-600'
+                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                }
+              `}
+            >
+              素材生成
+            </button>
+            <button
               onClick={() => setCurrentPage('giragira')}
               className={`
-                px-4 py-3 text-sm font-medium border-b-2 transition-all
+                px-4 py-3 text-sm font-medium border-b-2 transition-all whitespace-nowrap
                 ${currentPage === 'giragira'
                   ? 'border-orange-500 text-orange-600'
                   : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
                 }
               `}
             >
-              ギラギラくん ✨
+              ギラギラくん
+            </button>
+            <button
+              onClick={() => setCurrentPage('diagram')}
+              className={`
+                px-4 py-3 text-sm font-medium border-b-2 transition-all whitespace-nowrap
+                ${currentPage === 'diagram'
+                  ? 'border-purple-500 text-purple-600'
+                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                }
+              `}
+            >
+              図解テンプレート
             </button>
           </div>
         </div>
       </div>
 
       {/* ページコンテンツ */}
-      {currentPage === 'generator' ? (
+      {currentPage === 'generator' && (
         <MainLayout>
           <div className="space-y-4">
             {/* 上部：モデル選択と設定 */}
@@ -95,6 +122,7 @@ function App() {
                 <div className="lg:sticky lg:top-20 space-y-4 max-h-[calc(100vh-6rem)] lg:overflow-y-auto lg:pb-4">
                   <GachaPanel />
                   <PromptOutput />
+                  <HistoryPanel />
                   <FavoritesPanel />
                   <TemplatesPanel />
                 </div>
@@ -102,12 +130,16 @@ function App() {
             </div>
           </div>
         </MainLayout>
-      ) : (
-        <GiraGiraPage />
       )}
 
+      {currentPage === 'material' && <MaterialPage />}
+
+      {currentPage === 'giragira' && <GiraGiraPage />}
+
+      {currentPage === 'diagram' && <DiagramTemplatePage />}
+
       {/* フローティング「トップへ戻る」ボタン */}
-      {showScrollTop && currentPage === 'generator' && (
+      {showScrollTop && (
         <button
           onClick={scrollToTop}
           className="fixed bottom-6 right-6 z-40 w-12 h-12 bg-blue-500 hover:bg-blue-600 text-white rounded-full shadow-lg hover:shadow-xl transition-all flex items-center justify-center"

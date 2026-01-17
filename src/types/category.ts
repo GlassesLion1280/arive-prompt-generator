@@ -1,6 +1,6 @@
 import type { AIModelId } from './model';
 
-export type MainCategoryId = 'person' | 'background' | 'texture' | 'common' | 'thumbnail';
+export type MainCategoryId = 'person' | 'background' | 'texture' | 'common' | 'thumbnail' | 'vtuber-material' | 'oripa-material';
 
 export interface MainCategory {
   id: MainCategoryId;

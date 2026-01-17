@@ -1,6 +1,8 @@
 import { useState } from 'react';
 import { useEyeCandyStore, useFilteredEffects } from '../store/eyecandyStore';
-import { EFFECT_CATEGORIES, type EffectCategory, getEffectCategory } from '../data/eyecandyEffects';
+import { useHistoryStore } from '../store/historyStore';
+import { useGiraGiraFavoritesStore } from '../store/giraGiraFavoritesStore';
+import { EFFECT_CATEGORIES, type EffectCategory, getEffectCategory, getEffectById } from '../data/eyecandyEffects';
 
 // カテゴリバッジの色
 const categoryColors: Record<EffectCategory, string> = {
@@ -30,8 +32,15 @@ export function GiraGiraPage() {
   } = useEyeCandyStore();
 
   const filteredEffects = useFilteredEffects();
+  const { giraGiraHistory, addGiraGiraHistory, removeGiraGiraHistory, clearGiraGiraHistory } = useHistoryStore();
+  const { favorites, addFavorite, removeFavorite } = useGiraGiraFavoritesStore();
+
   const [copySuccess, setCopySuccess] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
+  const [isHistoryExpanded, setIsHistoryExpanded] = useState(false);
+  const [isFavoritesExpanded, setIsFavoritesExpanded] = useState(false);
+  const [newFavoriteName, setNewFavoriteName] = useState('');
+  const [isAddingFavorite, setIsAddingFavorite] = useState(false);
 
   // 検索でさらにフィルタリング
   const displayedEffects = searchQuery.trim()
@@ -42,15 +51,70 @@ export function GiraGiraPage() {
     : filteredEffects;
 
   const handleCopy = async () => {
-    if (!generatedPrompt) return;
+    if (!generatedPrompt || !selectedEffect) return;
 
     try {
       await navigator.clipboard.writeText(generatedPrompt);
       setCopySuccess(true);
       setTimeout(() => setCopySuccess(false), 2000);
+
+      // 履歴に保存
+      addGiraGiraHistory({
+        effectId: selectedEffect.id,
+        effectTitleJa: selectedEffect.titleJa,
+        applyScope,
+        partialText,
+        fullPrompt: generatedPrompt,
+      });
     } catch (err) {
       console.error('Failed to copy:', err);
     }
+  };
+
+  // 履歴から読み込み
+  const loadFromHistory = (item: typeof giraGiraHistory[0]) => {
+    const effect = getEffectById(item.effectId);
+    if (effect) {
+      setSelectedEffect(effect);
+      setApplyScope(item.applyScope);
+      setPartialText(item.partialText);
+    }
+  };
+
+  // お気に入りから読み込み
+  const loadFromFavorite = (fav: typeof favorites[0]) => {
+    const effect = getEffectById(fav.effectId);
+    if (effect) {
+      setSelectedEffect(effect);
+      setApplyScope(fav.applyScope);
+      setPartialText(fav.partialText);
+    }
+  };
+
+  // お気に入りに保存
+  const handleSaveFavorite = () => {
+    if (!newFavoriteName.trim() || !selectedEffect) return;
+
+    addFavorite({
+      name: newFavoriteName.trim(),
+      effectId: selectedEffect.id,
+      effectTitleJa: selectedEffect.titleJa,
+      applyScope,
+      partialText,
+    });
+
+    setNewFavoriteName('');
+    setIsAddingFavorite(false);
+  };
+
+  // 日時フォーマット
+  const formatDate = (timestamp: number) => {
+    const date = new Date(timestamp);
+    const month = date.getMonth() + 1;
+    const day = date.getDate();
+    const hours = date.getHours().toString().padStart(2, '0');
+    const minutes = date.getMinutes().toString().padStart(2, '0');
+    return `${month}/${day} ${hours}:${minutes}`;
   };
 
   return (
@@ -277,6 +341,184 @@ export function GiraGiraPage() {
                   <p className="text-gray-400 text-sm">
                     エフェクトを選択すると<br />プロンプトが表示されます
                   </p>
+                </div>
+              )}
+            </div>
+
+            {/* 履歴パネル */}
+            <div className="bg-white rounded-xl shadow-sm border border-gray-200">
+              <button
+                onClick={() => setIsHistoryExpanded(!isHistoryExpanded)}
+                className="w-full px-4 py-3 flex items-center justify-between text-left"
+              >
+                <div className="flex items-center gap-2">
+                  <span className="text-blue-500">🕐</span>
+                  <span className="text-sm font-medium text-gray-700">
+                    履歴 ({giraGiraHistory.length}/30)
+                  </span>
+                </div>
+                <span className="text-gray-400 text-sm">
+                  {isHistoryExpanded ? '▲' : '▼'}
+                </span>
+              </button>
+
+              {isHistoryExpanded && (
+                <div className="px-4 pb-4 border-t border-gray-100">
+                  {giraGiraHistory.length > 0 && (
+                    <div className="mt-3 flex justify-end">
+                      <button
+                        onClick={clearGiraGiraHistory}
+                        className="text-xs text-gray-400 hover:text-red-500 transition-colors"
+                      >
+                        すべて削除
+                      </button>
+                    </div>
+                  )}
+
+                  {giraGiraHistory.length > 0 ? (
+                    <div className="mt-2 space-y-2 max-h-[200px] overflow-y-auto">
+                      {giraGiraHistory.map((item) => (
+                        <div
+                          key={item.id}
+                          className="p-2 bg-gray-50 rounded-lg group"
+                        >
+                          <div className="flex items-start justify-between gap-2">
+                            <div className="flex-1 min-w-0">
+                              <p className="text-xs text-gray-400 mb-1">
+                                {formatDate(item.createdAt)}
+                              </p>
+                              <p className="text-xs text-gray-700 font-medium truncate">
+                                {item.effectTitleJa}
+                                {item.applyScope === 'partial' && item.partialText && (
+                                  <span className="text-gray-400 ml-1">
+                                    ({item.partialText})
+                                  </span>
+                                )}
+                              </p>
+                            </div>
+                            <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                              <button
+                                onClick={() => loadFromHistory(item)}
+                                className="p-1 text-gray-400 hover:text-green-500 transition-colors"
+                                title="読み込む"
+                              >
+                                ↩️
+                              </button>
+                              <button
+                                onClick={() => removeGiraGiraHistory(item.id)}
+                                className="p-1 text-gray-400 hover:text-red-500 transition-colors"
+                                title="削除"
+                              >
+                                ✕
+                              </button>
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <p className="mt-3 text-xs text-gray-400 text-center">
+                      履歴はありません
+                    </p>
+                  )}
+                </div>
+              )}
+            </div>
+
+            {/* お気に入りパネル */}
+            <div className="bg-white rounded-xl shadow-sm border border-gray-200">
+              <button
+                onClick={() => setIsFavoritesExpanded(!isFavoritesExpanded)}
+                className="w-full px-4 py-3 flex items-center justify-between text-left"
+              >
+                <div className="flex items-center gap-2">
+                  <span className="text-yellow-500">★</span>
+                  <span className="text-sm font-medium text-gray-700">
+                    お気に入り ({favorites.length})
+                  </span>
+                </div>
+                <span className="text-gray-400 text-sm">
+                  {isFavoritesExpanded ? '▲' : '▼'}
+                </span>
+              </button>
+
+              {isFavoritesExpanded && (
+                <div className="px-4 pb-4 border-t border-gray-100">
+                  {/* 保存ボタン */}
+                  <div className="mt-3">
+                    {isAddingFavorite ? (
+                      <div className="flex gap-2">
+                        <input
+                          type="text"
+                          value={newFavoriteName}
+                          onChange={(e) => setNewFavoriteName(e.target.value)}
+                          placeholder="プリセット名を入力"
+                          className="flex-1 px-3 py-1.5 text-sm border border-gray-300 rounded-lg
+                                   focus:outline-none focus:ring-2 focus:ring-orange-400 focus:border-transparent"
+                          autoFocus
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter') handleSaveFavorite();
+                            if (e.key === 'Escape') setIsAddingFavorite(false);
+                          }}
+                        />
+                        <button
+                          onClick={handleSaveFavorite}
+                          disabled={!newFavoriteName.trim()}
+                          className="px-3 py-1.5 text-sm bg-orange-500 text-white rounded-lg
+                                   hover:bg-orange-600 disabled:bg-gray-300 disabled:cursor-not-allowed"
+                        >
+                          保存
+                        </button>
+                        <button
+                          onClick={() => setIsAddingFavorite(false)}
+                          className="px-3 py-1.5 text-sm text-gray-600 border border-gray-300 rounded-lg hover:bg-gray-50"
+                        >
+                          キャンセル
+                        </button>
+                      </div>
+                    ) : (
+                      <button
+                        onClick={() => setIsAddingFavorite(true)}
+                        disabled={!selectedEffect}
+                        className="w-full px-3 py-2 text-sm text-gray-600 border border-gray-300 rounded-lg
+                                 hover:bg-gray-50 disabled:bg-gray-100 disabled:cursor-not-allowed"
+                      >
+                        ＋ 現在の選択を保存
+                      </button>
+                    )}
+                  </div>
+
+                  {/* お気に入りリスト */}
+                  {favorites.length > 0 ? (
+                    <div className="mt-3 space-y-2 max-h-[200px] overflow-y-auto">
+                      {favorites.map((fav) => (
+                        <div
+                          key={fav.id}
+                          className="flex items-center gap-2 p-2 bg-gray-50 rounded-lg group"
+                        >
+                          <button
+                            onClick={() => loadFromFavorite(fav)}
+                            className="flex-1 text-left text-sm text-gray-700 hover:text-orange-600 truncate"
+                            title={`読み込む: ${fav.name}`}
+                          >
+                            {fav.name}
+                          </button>
+                          <button
+                            onClick={() => removeFavorite(fav.id)}
+                            className="text-gray-400 hover:text-red-500 opacity-0 group-hover:opacity-100
+                                     transition-opacity p-1"
+                            title="削除"
+                          >
+                            ✕
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <p className="mt-3 text-xs text-gray-400 text-center">
+                      保存されたお気に入りはありません
+                    </p>
+                  )}
                 </div>
               )}
             </div>

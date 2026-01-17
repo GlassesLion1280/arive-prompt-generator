@@ -1,6 +1,7 @@
 import { CopyButton } from './common/CopyButton';
 import { Button } from './common/Button';
 import { usePromptStore } from '../store/promptStore';
+import { useHistoryStore } from '../store/historyStore';
 import { useClipboard } from '../hooks/useClipboard';
 import { countSelectedOptions } from '../utils/promptBuilder';
 import { getCategoryById, getOptionById } from '../data/categories';
@@ -13,7 +14,19 @@ interface SelectedItem {
 }
 
 export function PromptOutput() {
-  const { generatedPrompt, selectedOptions, resetAllSelections, toggleOption, imageCount } = usePromptStore();
+  const {
+    generatedPrompt,
+    selectedOptions,
+    resetAllSelections,
+    toggleOption,
+    imageCount,
+    selectedModel,
+    outputLanguage,
+    freeText,
+    showNegativePrompt,
+    thumbnailText,
+  } = usePromptStore();
+  const { addPromptHistory } = useHistoryStore();
   const { isCopied, copyToClipboard } = useClipboard();
 
   const selectedCount = countSelectedOptions(selectedOptions);
@@ -29,6 +42,16 @@ export function PromptOutput() {
     const promptWithCount = getFullPromptWithCount();
     if (promptWithCount) {
       copyToClipboard(promptWithCount);
+      // 履歴に保存
+      addPromptHistory({
+        selectedModel,
+        selectedOptions,
+        outputLanguage,
+        freeText,
+        showNegativePrompt,
+        thumbnailText,
+        fullPrompt: promptWithCount,
+      });
     }
   };
 
