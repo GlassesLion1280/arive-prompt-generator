@@ -27,6 +27,29 @@ export interface GiraGiraHistoryItem {
   fullPrompt: string;
 }
 
+// 最終仕上げの履歴アイテム
+export interface FinishingHistoryItem {
+  id: string;
+  createdAt: number;
+  effectId: string;
+  effectTitleJa: string;
+  applyScope: 'all' | 'partial';
+  partialText: string;
+  fullPrompt: string;
+}
+
+// 図解テンプレートの履歴アイテム
+export interface DiagramHistoryItem {
+  id: string;
+  createdAt: number;
+  templateId: string;
+  templateLabelJa: string;
+  titleText: string;
+  subText: string;
+  contentText: string;
+  fullPrompt: string;
+}
+
 const MAX_HISTORY_ITEMS = 30;
 
 interface HistoryState {
@@ -41,6 +64,18 @@ interface HistoryState {
   addGiraGiraHistory: (item: Omit<GiraGiraHistoryItem, 'id' | 'createdAt'>) => void;
   removeGiraGiraHistory: (id: string) => void;
   clearGiraGiraHistory: () => void;
+
+  // 最終仕上げ履歴
+  finishingHistory: FinishingHistoryItem[];
+  addFinishingHistory: (item: Omit<FinishingHistoryItem, 'id' | 'createdAt'>) => void;
+  removeFinishingHistory: (id: string) => void;
+  clearFinishingHistory: () => void;
+
+  // 図解テンプレート履歴
+  diagramHistory: DiagramHistoryItem[];
+  addDiagramHistory: (item: Omit<DiagramHistoryItem, 'id' | 'createdAt'>) => void;
+  removeDiagramHistory: (id: string) => void;
+  clearDiagramHistory: () => void;
 }
 
 export const useHistoryStore = create<HistoryState>()(
@@ -48,6 +83,8 @@ export const useHistoryStore = create<HistoryState>()(
     (set, get) => ({
       promptHistory: [],
       giraGiraHistory: [],
+      finishingHistory: [],
+      diagramHistory: [],
 
       addPromptHistory: (item) => {
         const newItem: PromptHistoryItem = {
@@ -56,7 +93,6 @@ export const useHistoryStore = create<HistoryState>()(
           createdAt: Date.now(),
         };
         const history = [newItem, ...get().promptHistory];
-        // 30件を超えたら古いものを削除
         if (history.length > MAX_HISTORY_ITEMS) {
           history.splice(MAX_HISTORY_ITEMS);
         }
@@ -78,7 +114,6 @@ export const useHistoryStore = create<HistoryState>()(
           createdAt: Date.now(),
         };
         const history = [newItem, ...get().giraGiraHistory];
-        // 30件を超えたら古いものを削除
         if (history.length > MAX_HISTORY_ITEMS) {
           history.splice(MAX_HISTORY_ITEMS);
         }
@@ -91,6 +126,48 @@ export const useHistoryStore = create<HistoryState>()(
 
       clearGiraGiraHistory: () => {
         set({ giraGiraHistory: [] });
+      },
+
+      addFinishingHistory: (item) => {
+        const newItem: FinishingHistoryItem = {
+          ...item,
+          id: `fh-${Date.now()}`,
+          createdAt: Date.now(),
+        };
+        const history = [newItem, ...get().finishingHistory];
+        if (history.length > MAX_HISTORY_ITEMS) {
+          history.splice(MAX_HISTORY_ITEMS);
+        }
+        set({ finishingHistory: history });
+      },
+
+      removeFinishingHistory: (id) => {
+        set({ finishingHistory: get().finishingHistory.filter((h) => h.id !== id) });
+      },
+
+      clearFinishingHistory: () => {
+        set({ finishingHistory: [] });
+      },
+
+      addDiagramHistory: (item) => {
+        const newItem: DiagramHistoryItem = {
+          ...item,
+          id: `dh-${Date.now()}`,
+          createdAt: Date.now(),
+        };
+        const history = [newItem, ...get().diagramHistory];
+        if (history.length > MAX_HISTORY_ITEMS) {
+          history.splice(MAX_HISTORY_ITEMS);
+        }
+        set({ diagramHistory: history });
+      },
+
+      removeDiagramHistory: (id) => {
+        set({ diagramHistory: get().diagramHistory.filter((h) => h.id !== id) });
+      },
+
+      clearDiagramHistory: () => {
+        set({ diagramHistory: [] });
       },
     }),
     {

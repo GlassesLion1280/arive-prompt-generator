@@ -54,8 +54,14 @@ export function GiraGiraPage() {
   } = useEyeCandyStore();
 
   const filteredEffects = useFilteredEffects();
-  const { giraGiraHistory, addGiraGiraHistory, removeGiraGiraHistory, clearGiraGiraHistory } = useHistoryStore();
-  const { favorites, addFavorite, removeFavorite } = useGiraGiraFavoritesStore();
+  const {
+    giraGiraHistory, addGiraGiraHistory, removeGiraGiraHistory, clearGiraGiraHistory,
+    finishingHistory, addFinishingHistory, removeFinishingHistory, clearFinishingHistory,
+  } = useHistoryStore();
+  const {
+    favorites, addFavorite, removeFavorite,
+    finishingFavorites, addFinishingFavorite, removeFinishingFavorite,
+  } = useGiraGiraFavoritesStore();
 
   // タブ切り替え
   const [activeTab, setActiveTab] = useState<TabType>('effect');
@@ -72,6 +78,12 @@ export function GiraGiraPage() {
   const [isFavoritesExpanded, setIsFavoritesExpanded] = useState(false);
   const [newFavoriteName, setNewFavoriteName] = useState('');
   const [isAddingFavorite, setIsAddingFavorite] = useState(false);
+
+  // 最終仕上げ用の履歴・お気に入りパネル状態
+  const [isFinishingHistoryExpanded, setIsFinishingHistoryExpanded] = useState(false);
+  const [isFinishingFavoritesExpanded, setIsFinishingFavoritesExpanded] = useState(false);
+  const [newFinishingFavoriteName, setNewFinishingFavoriteName] = useState('');
+  const [isAddingFinishingFavorite, setIsAddingFinishingFavorite] = useState(false);
 
   // 検索でさらにフィルタリング
   const displayedEffects = searchQuery.trim()
@@ -133,6 +145,17 @@ export function GiraGiraPage() {
           fullPrompt: generatedPrompt,
         });
       }
+
+      // 最終仕上げタブの場合は履歴に保存
+      if (activeTab === 'finishing' && selectedFinishingEffect && finishingGeneratedPrompt) {
+        addFinishingHistory({
+          effectId: selectedFinishingEffect.id,
+          effectTitleJa: selectedFinishingEffect.titleJa,
+          applyScope: finishingApplyScope,
+          partialText: finishingPartialText,
+          fullPrompt: finishingGeneratedPrompt,
+        });
+      }
     } catch (err) {
       console.error('Failed to copy:', err);
     }
@@ -174,6 +197,44 @@ export function GiraGiraPage() {
 
     setNewFavoriteName('');
     setIsAddingFavorite(false);
+  };
+
+  // 最終仕上げ履歴から読み込み
+  const loadFromFinishingHistory = (item: typeof finishingHistory[0]) => {
+    const effect = FINISHING_EFFECTS.find(e => e.id === item.effectId);
+    if (effect) {
+      setActiveTab('finishing');
+      setSelectedFinishingEffect(effect);
+      setFinishingApplyScope(item.applyScope);
+      setFinishingPartialText(item.partialText);
+    }
+  };
+
+  // 最終仕上げお気に入りから読み込み
+  const loadFromFinishingFavorite = (fav: typeof finishingFavorites[0]) => {
+    const effect = FINISHING_EFFECTS.find(e => e.id === fav.effectId);
+    if (effect) {
+      setActiveTab('finishing');
+      setSelectedFinishingEffect(effect);
+      setFinishingApplyScope(fav.applyScope);
+      setFinishingPartialText(fav.partialText);
+    }
+  };
+
+  // 最終仕上げお気に入りに保存
+  const handleSaveFinishingFavorite = () => {
+    if (!newFinishingFavoriteName.trim() || !selectedFinishingEffect) return;
+
+    addFinishingFavorite({
+      name: newFinishingFavoriteName.trim(),
+      effectId: selectedFinishingEffect.id,
+      effectTitleJa: selectedFinishingEffect.titleJa,
+      applyScope: finishingApplyScope,
+      partialText: finishingPartialText,
+    });
+
+    setNewFinishingFavoriteName('');
+    setIsAddingFinishingFavorite(false);
   };
 
   // 最終仕上げリセット
@@ -716,6 +777,188 @@ export function GiraGiraPage() {
                             </button>
                             <button
                               onClick={() => removeFavorite(fav.id)}
+                              className="text-gray-400 hover:text-red-500 opacity-0 group-hover:opacity-100
+                                       transition-opacity p-1"
+                              title="削除"
+                            >
+                              ✕
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <p className="mt-3 text-xs text-gray-400 text-center">
+                        保存されたお気に入りはありません
+                      </p>
+                    )}
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* 最終仕上げ用履歴パネル */}
+            {activeTab === 'finishing' && (
+              <div className="bg-white rounded-xl shadow-sm border border-gray-200">
+                <button
+                  onClick={() => setIsFinishingHistoryExpanded(!isFinishingHistoryExpanded)}
+                  className="w-full px-4 py-3 flex items-center justify-between text-left"
+                >
+                  <div className="flex items-center gap-2">
+                    <span className="text-blue-500">🕐</span>
+                    <span className="text-sm font-medium text-gray-700">
+                      履歴 ({finishingHistory.length}/30)
+                    </span>
+                  </div>
+                  <span className="text-gray-400 text-sm">
+                    {isFinishingHistoryExpanded ? '▲' : '▼'}
+                  </span>
+                </button>
+
+                {isFinishingHistoryExpanded && (
+                  <div className="px-4 pb-4 border-t border-gray-100">
+                    {finishingHistory.length > 0 && (
+                      <div className="mt-3 flex justify-end">
+                        <button
+                          onClick={clearFinishingHistory}
+                          className="text-xs text-gray-400 hover:text-red-500 transition-colors"
+                        >
+                          すべて削除
+                        </button>
+                      </div>
+                    )}
+
+                    {finishingHistory.length > 0 ? (
+                      <div className="mt-2 space-y-2 max-h-[200px] overflow-y-auto">
+                        {finishingHistory.map((item) => (
+                          <div
+                            key={item.id}
+                            className="p-2 bg-gray-50 rounded-lg group"
+                          >
+                            <div className="flex items-start justify-between gap-2">
+                              <div className="flex-1 min-w-0">
+                                <p className="text-xs text-gray-400 mb-1">
+                                  {formatDate(item.createdAt)}
+                                </p>
+                                <p className="text-xs text-gray-700 font-medium truncate">
+                                  {item.effectTitleJa}
+                                  {item.applyScope === 'partial' && item.partialText && (
+                                    <span className="text-gray-400 ml-1">
+                                      ({item.partialText})
+                                    </span>
+                                  )}
+                                </p>
+                              </div>
+                              <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                                <button
+                                  onClick={() => loadFromFinishingHistory(item)}
+                                  className="p-1 text-gray-400 hover:text-green-500 transition-colors"
+                                  title="読み込む"
+                                >
+                                  ↩️
+                                </button>
+                                <button
+                                  onClick={() => removeFinishingHistory(item.id)}
+                                  className="p-1 text-gray-400 hover:text-red-500 transition-colors"
+                                  title="削除"
+                                >
+                                  ✕
+                                </button>
+                              </div>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <p className="mt-3 text-xs text-gray-400 text-center">
+                        履歴はありません
+                      </p>
+                    )}
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* 最終仕上げ用お気に入りパネル */}
+            {activeTab === 'finishing' && (
+              <div className="bg-white rounded-xl shadow-sm border border-gray-200">
+                <button
+                  onClick={() => setIsFinishingFavoritesExpanded(!isFinishingFavoritesExpanded)}
+                  className="w-full px-4 py-3 flex items-center justify-between text-left"
+                >
+                  <div className="flex items-center gap-2">
+                    <span className="text-yellow-500">★</span>
+                    <span className="text-sm font-medium text-gray-700">
+                      お気に入り ({finishingFavorites.length})
+                    </span>
+                  </div>
+                  <span className="text-gray-400 text-sm">
+                    {isFinishingFavoritesExpanded ? '▲' : '▼'}
+                  </span>
+                </button>
+
+                {isFinishingFavoritesExpanded && (
+                  <div className="px-4 pb-4 border-t border-gray-100">
+                    {/* 保存ボタン */}
+                    <div className="mt-3">
+                      {isAddingFinishingFavorite ? (
+                        <div className="flex gap-2">
+                          <input
+                            type="text"
+                            value={newFinishingFavoriteName}
+                            onChange={(e) => setNewFinishingFavoriteName(e.target.value)}
+                            placeholder="プリセット名を入力"
+                            className="flex-1 px-3 py-1.5 text-sm border border-gray-300 rounded-lg
+                                     focus:outline-none focus:ring-2 focus:ring-red-400 focus:border-transparent"
+                            autoFocus
+                            onKeyDown={(e) => {
+                              if (e.key === 'Enter') handleSaveFinishingFavorite();
+                              if (e.key === 'Escape') setIsAddingFinishingFavorite(false);
+                            }}
+                          />
+                          <button
+                            onClick={handleSaveFinishingFavorite}
+                            disabled={!newFinishingFavoriteName.trim()}
+                            className="px-3 py-1.5 text-sm bg-red-500 text-white rounded-lg
+                                     hover:bg-red-600 disabled:bg-gray-300 disabled:cursor-not-allowed"
+                          >
+                            保存
+                          </button>
+                          <button
+                            onClick={() => setIsAddingFinishingFavorite(false)}
+                            className="px-3 py-1.5 text-sm text-gray-600 border border-gray-300 rounded-lg hover:bg-gray-50"
+                          >
+                            キャンセル
+                          </button>
+                        </div>
+                      ) : (
+                        <button
+                          onClick={() => setIsAddingFinishingFavorite(true)}
+                          disabled={!selectedFinishingEffect}
+                          className="w-full px-3 py-2 text-sm text-gray-600 border border-gray-300 rounded-lg
+                                   hover:bg-gray-50 disabled:bg-gray-100 disabled:cursor-not-allowed"
+                        >
+                          ＋ 現在の選択を保存
+                        </button>
+                      )}
+                    </div>
+
+                    {/* お気に入りリスト */}
+                    {finishingFavorites.length > 0 ? (
+                      <div className="mt-3 space-y-2 max-h-[200px] overflow-y-auto">
+                        {finishingFavorites.map((fav) => (
+                          <div
+                            key={fav.id}
+                            className="flex items-center gap-2 p-2 bg-gray-50 rounded-lg group"
+                          >
+                            <button
+                              onClick={() => loadFromFinishingFavorite(fav)}
+                              className="flex-1 text-left text-sm text-gray-700 hover:text-red-600 truncate"
+                              title={`読み込む: ${fav.name}`}
+                            >
+                              {fav.name}
+                            </button>
+                            <button
+                              onClick={() => removeFinishingFavorite(fav.id)}
                               className="text-gray-400 hover:text-red-500 opacity-0 group-hover:opacity-100
                                        transition-opacity p-1"
                               title="削除"

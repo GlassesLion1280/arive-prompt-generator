@@ -3,6 +3,8 @@ import { MainLayout } from '../components/layout/MainLayout';
 import { ModelSelector } from '../components/ModelSelector';
 import { Accordion } from '../components/common/Accordion';
 import { usePromptStore } from '../store/promptStore';
+import { useHistoryStore } from '../store/historyStore';
+import { useGiraGiraFavoritesStore } from '../store/giraGiraFavoritesStore';
 import {
   DIAGRAM_TEMPLATES,
   DIAGRAM_CATEGORY_LABELS,
@@ -18,6 +20,26 @@ export function DiagramTemplatePage() {
   const [contentText, setContentText] = useState('');
   const [expandedCategories, setExpandedCategories] = useState<DiagramCategory[]>([]);
   const { selectedModel } = usePromptStore();
+
+  // 履歴・お気に入りstore
+  const {
+    diagramHistory,
+    addDiagramHistory,
+    removeDiagramHistory,
+    clearDiagramHistory,
+  } = useHistoryStore();
+  const {
+    diagramFavorites,
+    addDiagramFavorite,
+    removeDiagramFavorite,
+  } = useGiraGiraFavoritesStore();
+
+  // 履歴・お気に入りパネルの状態
+  const [isHistoryExpanded, setIsHistoryExpanded] = useState(false);
+  const [isFavoritesExpanded, setIsFavoritesExpanded] = useState(false);
+  const [newFavoriteName, setNewFavoriteName] = useState('');
+  const [isAddingFavorite, setIsAddingFavorite] = useState(false);
+  const [copySuccess, setCopySuccess] = useState(false);
 
   // Nanobanana Pro以外は使用不可
   const isEnabled = selectedModel === 'nanobanana-thumb';
@@ -75,11 +97,76 @@ export function DiagramTemplatePage() {
   }, []);
 
   // コピー
-  const copyPrompt = useCallback(() => {
-    if (generatedPrompt) {
-      navigator.clipboard.writeText(generatedPrompt);
+  const copyPrompt = useCallback(async () => {
+    if (generatedPrompt && selectedTemplate) {
+      try {
+        await navigator.clipboard.writeText(generatedPrompt);
+        setCopySuccess(true);
+        setTimeout(() => setCopySuccess(false), 2000);
+
+        // 履歴に保存
+        addDiagramHistory({
+          templateId: selectedTemplate.id,
+          templateLabelJa: selectedTemplate.labelJa,
+          titleText,
+          subText,
+          contentText,
+          fullPrompt: generatedPrompt,
+        });
+      } catch (err) {
+        console.error('Failed to copy:', err);
+      }
     }
-  }, [generatedPrompt]);
+  }, [generatedPrompt, selectedTemplate, titleText, subText, contentText, addDiagramHistory]);
+
+  // 履歴から読み込み
+  const loadFromHistory = useCallback((item: typeof diagramHistory[0]) => {
+    const template = DIAGRAM_TEMPLATES.find(t => t.id === item.templateId);
+    if (template) {
+      setSelectedTemplate(template);
+      setTitleText(item.titleText);
+      setSubText(item.subText);
+      setContentText(item.contentText);
+    }
+  }, []);
+
+  // お気に入りから読み込み
+  const loadFromFavorite = useCallback((fav: typeof diagramFavorites[0]) => {
+    const template = DIAGRAM_TEMPLATES.find(t => t.id === fav.templateId);
+    if (template) {
+      setSelectedTemplate(template);
+      setTitleText(fav.titleText);
+      setSubText(fav.subText);
+      setContentText(fav.contentText);
+    }
+  }, []);
+
+  // お気に入りに保存
+  const handleSaveFavorite = useCallback(() => {
+    if (!newFavoriteName.trim() || !selectedTemplate) return;
+
+    addDiagramFavorite({
+      name: newFavoriteName.trim(),
+      templateId: selectedTemplate.id,
+      templateLabelJa: selectedTemplate.labelJa,
+      titleText,
+      subText,
+      contentText,
+    });
+
+    setNewFavoriteName('');
+    setIsAddingFavorite(false);
+  }, [newFavoriteName, selectedTemplate, titleText, subText, contentText, addDiagramFavorite]);
+
+  // 日時フォーマット
+  const formatDate = useCallback((timestamp: number) => {
+    const date = new Date(timestamp);
+    const month = date.getMonth() + 1;
+    const day = date.getDate();
+    const hours = date.getHours().toString().padStart(2, '0');
+    const minutes = date.getMinutes().toString().padStart(2, '0');
+    return `${month}/${day} ${hours}:${minutes}`;
+  }, []);
 
   // カテゴリ一覧
   const categories = getAllDiagramCategories();
@@ -257,12 +344,14 @@ export function DiagramTemplatePage() {
                     <button
                       onClick={copyPrompt}
                       disabled={!generatedPrompt}
-                      className="flex items-center gap-1 px-3 py-1.5 bg-purple-500 text-white text-xs rounded-lg hover:bg-purple-600 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors"
+                      className={`flex items-center gap-1 px-3 py-1.5 text-white text-xs rounded-lg transition-colors disabled:bg-gray-300 disabled:cursor-not-allowed ${
+                        copySuccess ? 'bg-green-500' : 'bg-purple-500 hover:bg-purple-600'
+                      }`}
                     >
                       <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
                       </svg>
-                      コピー
+                      {copySuccess ? 'コピー完了!' : 'コピー'}
                     </button>
                     <button
                       onClick={resetAll}
@@ -284,6 +373,184 @@ export function DiagramTemplatePage() {
                     </p>
                   )}
                 </div>
+              </div>
+
+              {/* 履歴パネル */}
+              <div className="bg-white rounded-xl shadow-sm border border-gray-200">
+                <button
+                  onClick={() => setIsHistoryExpanded(!isHistoryExpanded)}
+                  className="w-full px-4 py-3 flex items-center justify-between text-left"
+                >
+                  <div className="flex items-center gap-2">
+                    <span className="text-blue-500">🕐</span>
+                    <span className="text-sm font-medium text-gray-700">
+                      履歴 ({diagramHistory.length}/30)
+                    </span>
+                  </div>
+                  <span className="text-gray-400 text-sm">
+                    {isHistoryExpanded ? '▲' : '▼'}
+                  </span>
+                </button>
+
+                {isHistoryExpanded && (
+                  <div className="px-4 pb-4 border-t border-gray-100">
+                    {diagramHistory.length > 0 && (
+                      <div className="mt-3 flex justify-end">
+                        <button
+                          onClick={clearDiagramHistory}
+                          className="text-xs text-gray-400 hover:text-red-500 transition-colors"
+                        >
+                          すべて削除
+                        </button>
+                      </div>
+                    )}
+
+                    {diagramHistory.length > 0 ? (
+                      <div className="mt-2 space-y-2 max-h-[200px] overflow-y-auto">
+                        {diagramHistory.map((item) => (
+                          <div
+                            key={item.id}
+                            className="p-2 bg-gray-50 rounded-lg group"
+                          >
+                            <div className="flex items-start justify-between gap-2">
+                              <div className="flex-1 min-w-0">
+                                <p className="text-xs text-gray-400 mb-1">
+                                  {formatDate(item.createdAt)}
+                                </p>
+                                <p className="text-xs text-gray-700 font-medium truncate">
+                                  {item.templateLabelJa}
+                                </p>
+                                {item.titleText && (
+                                  <p className="text-xs text-gray-500 truncate">
+                                    「{item.titleText}」
+                                  </p>
+                                )}
+                              </div>
+                              <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                                <button
+                                  onClick={() => loadFromHistory(item)}
+                                  className="p-1 text-gray-400 hover:text-green-500 transition-colors"
+                                  title="読み込む"
+                                >
+                                  ↩️
+                                </button>
+                                <button
+                                  onClick={() => removeDiagramHistory(item.id)}
+                                  className="p-1 text-gray-400 hover:text-red-500 transition-colors"
+                                  title="削除"
+                                >
+                                  ✕
+                                </button>
+                              </div>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <p className="mt-3 text-xs text-gray-400 text-center">
+                        履歴はありません
+                      </p>
+                    )}
+                  </div>
+                )}
+              </div>
+
+              {/* お気に入りパネル */}
+              <div className="bg-white rounded-xl shadow-sm border border-gray-200">
+                <button
+                  onClick={() => setIsFavoritesExpanded(!isFavoritesExpanded)}
+                  className="w-full px-4 py-3 flex items-center justify-between text-left"
+                >
+                  <div className="flex items-center gap-2">
+                    <span className="text-yellow-500">★</span>
+                    <span className="text-sm font-medium text-gray-700">
+                      お気に入り ({diagramFavorites.length})
+                    </span>
+                  </div>
+                  <span className="text-gray-400 text-sm">
+                    {isFavoritesExpanded ? '▲' : '▼'}
+                  </span>
+                </button>
+
+                {isFavoritesExpanded && (
+                  <div className="px-4 pb-4 border-t border-gray-100">
+                    {/* 保存ボタン */}
+                    <div className="mt-3">
+                      {isAddingFavorite ? (
+                        <div className="flex gap-2">
+                          <input
+                            type="text"
+                            value={newFavoriteName}
+                            onChange={(e) => setNewFavoriteName(e.target.value)}
+                            placeholder="プリセット名を入力"
+                            className="flex-1 px-3 py-1.5 text-sm border border-gray-300 rounded-lg
+                                     focus:outline-none focus:ring-2 focus:ring-purple-400 focus:border-transparent"
+                            autoFocus
+                            onKeyDown={(e) => {
+                              if (e.key === 'Enter') handleSaveFavorite();
+                              if (e.key === 'Escape') setIsAddingFavorite(false);
+                            }}
+                          />
+                          <button
+                            onClick={handleSaveFavorite}
+                            disabled={!newFavoriteName.trim()}
+                            className="px-3 py-1.5 text-sm bg-purple-500 text-white rounded-lg
+                                     hover:bg-purple-600 disabled:bg-gray-300 disabled:cursor-not-allowed"
+                          >
+                            保存
+                          </button>
+                          <button
+                            onClick={() => setIsAddingFavorite(false)}
+                            className="px-3 py-1.5 text-sm text-gray-600 border border-gray-300 rounded-lg hover:bg-gray-50"
+                          >
+                            キャンセル
+                          </button>
+                        </div>
+                      ) : (
+                        <button
+                          onClick={() => setIsAddingFavorite(true)}
+                          disabled={!selectedTemplate}
+                          className="w-full px-3 py-2 text-sm text-gray-600 border border-gray-300 rounded-lg
+                                   hover:bg-gray-50 disabled:bg-gray-100 disabled:cursor-not-allowed"
+                        >
+                          ＋ 現在の選択を保存
+                        </button>
+                      )}
+                    </div>
+
+                    {/* お気に入りリスト */}
+                    {diagramFavorites.length > 0 ? (
+                      <div className="mt-3 space-y-2 max-h-[200px] overflow-y-auto">
+                        {diagramFavorites.map((fav) => (
+                          <div
+                            key={fav.id}
+                            className="flex items-center gap-2 p-2 bg-gray-50 rounded-lg group"
+                          >
+                            <button
+                              onClick={() => loadFromFavorite(fav)}
+                              className="flex-1 text-left text-sm text-gray-700 hover:text-purple-600 truncate"
+                              title={`読み込む: ${fav.name}`}
+                            >
+                              {fav.name}
+                            </button>
+                            <button
+                              onClick={() => removeDiagramFavorite(fav.id)}
+                              className="text-gray-400 hover:text-red-500 opacity-0 group-hover:opacity-100
+                                       transition-opacity p-1"
+                              title="削除"
+                            >
+                              ✕
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <p className="mt-3 text-xs text-gray-400 text-center">
+                        保存されたお気に入りはありません
+                      </p>
+                    )}
+                  </div>
+                )}
               </div>
 
               {/* ヒント */}
