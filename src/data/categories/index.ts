@@ -6,8 +6,6 @@ import { COMMON_CATEGORIES } from './common';
 import { IMPRESSION_CATEGORIES } from './impression';
 import { THUMBNAIL_CATEGORIES } from './thumbnail';
 import { NANOBANANA_THUMBNAIL_CATEGORIES } from './nanobanana-thumbnail';
-import { VTUBER_MATERIAL_CATEGORIES } from './vtuber-material';
-import { ORIPA_FRAME_CATEGORIES } from './oripa-frame';
 
 // 通常のメインカテゴリ（全モデル共通）
 export const MAIN_CATEGORIES: MainCategory[] = [
@@ -38,12 +36,6 @@ export const getMainCategoriesForModel = (modelId: AIModelId): MainCategory[] =>
   return MAIN_CATEGORIES;
 };
 
-// 素材生成用メインカテゴリ
-export const MATERIAL_MAIN_CATEGORIES: MainCategory[] = [
-  { id: 'vtuber-material', label: 'VTuber Material', labelJa: 'VTuber素材', order: 1 },
-  { id: 'oripa-material', label: 'Oripa Frame', labelJa: 'オリパ/トレカ', order: 2 },
-];
-
 // 通常の全カテゴリ
 export const ALL_CATEGORIES: SubCategory[] = [
   ...PERSON_CATEGORIES,
@@ -53,8 +45,6 @@ export const ALL_CATEGORIES: SubCategory[] = [
   ...IMPRESSION_CATEGORIES,
   ...THUMBNAIL_CATEGORIES,
   ...NANOBANANA_THUMBNAIL_CATEGORIES,
-  ...VTUBER_MATERIAL_CATEGORIES,
-  ...ORIPA_FRAME_CATEGORIES,
 ];
 
 // メインカテゴリIDに基づいてサブカテゴリを取得
@@ -87,6 +77,4 @@ export {
   IMPRESSION_CATEGORIES,
   THUMBNAIL_CATEGORIES,
   NANOBANANA_THUMBNAIL_CATEGORIES,
-  VTUBER_MATERIAL_CATEGORIES,
-  ORIPA_FRAME_CATEGORIES,
 };
