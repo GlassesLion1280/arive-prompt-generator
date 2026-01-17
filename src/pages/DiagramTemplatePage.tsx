@@ -15,6 +15,7 @@ export function DiagramTemplatePage() {
   const [selectedTemplate, setSelectedTemplate] = useState<DiagramTemplate | null>(null);
   const [titleText, setTitleText] = useState('');
   const [subText, setSubText] = useState('');
+  const [contentText, setContentText] = useState('');
   const [expandedCategories, setExpandedCategories] = useState<DiagramCategory[]>([]);
   const { selectedModel } = usePromptStore();
 
@@ -40,11 +41,16 @@ export function DiagramTemplatePage() {
       parts.push(`subtitle "${subText.trim()}"`);
     }
 
+    // 本文テキスト
+    if (contentText.trim()) {
+      parts.push(`content text "${contentText.trim()}"`);
+    }
+
     // 共通の品質指定
     parts.push('clean professional infographic design, high quality, readable text');
 
     return parts.join(', ');
-  }, [selectedTemplate, titleText, subText]);
+  }, [selectedTemplate, titleText, subText, contentText]);
 
   // アコーディオントグル
   const toggleCategory = useCallback((category: DiagramCategory) => {
@@ -65,6 +71,7 @@ export function DiagramTemplatePage() {
     setSelectedTemplate(null);
     setTitleText('');
     setSubText('');
+    setContentText('');
   }, []);
 
   // コピー
@@ -137,6 +144,21 @@ export function DiagramTemplatePage() {
                     placeholder="例: 成功の秘訣を解説"
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
                   />
+                </div>
+                <div>
+                  <label className="block text-xs text-gray-500 mb-1">
+                    本文（図解に含めたい内容を入力）
+                  </label>
+                  <textarea
+                    value={contentText}
+                    onChange={(e) => setContentText(e.target.value)}
+                    placeholder="例: ポイント1: 早起きする / ポイント2: 運動する / ポイント3: 読書する"
+                    rows={4}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent resize-none"
+                  />
+                  <p className="text-xs text-gray-400 mt-1">
+                    箇条書きや改行で入力すると見やすくなります
+                  </p>
                 </div>
               </div>
             </div>
