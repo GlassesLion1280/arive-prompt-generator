@@ -15,6 +15,16 @@ import {
 // タブの種類
 type TabType = 'effect' | 'finishing';
 
+// 適用具合の種類
+type IntensityLevel = 'subtle' | 'normal' | 'strong';
+
+// 適用具合のラベルとプロンプト
+const INTENSITY_OPTIONS: { id: IntensityLevel; labelJa: string; promptEn: string }[] = [
+  { id: 'subtle', labelJa: '控えめ', promptEn: 'Apply the effect subtly and minimally. Keep it very gentle and understated.' },
+  { id: 'normal', labelJa: '普通', promptEn: 'Apply the effect with moderate intensity.' },
+  { id: 'strong', labelJa: '大げさ', promptEn: 'Apply the effect dramatically and intensely. Make it bold and prominent.' },
+];
+
 // カテゴリバッジの色
 const categoryColors: Record<EffectCategory, string> = {
   all: 'bg-gray-100 text-gray-700',
@@ -71,6 +81,7 @@ export function GiraGiraPage() {
   const [selectedFinishingCategory, setSelectedFinishingCategory] = useState<FinishingCategory>('all');
   const [finishingApplyScope, setFinishingApplyScope] = useState<'all' | 'partial'>('all');
   const [finishingPartialText, setFinishingPartialText] = useState('');
+  const [finishingIntensity, setFinishingIntensity] = useState<IntensityLevel>('normal');
 
   const [copySuccess, setCopySuccess] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
@@ -119,10 +130,17 @@ export function GiraGiraPage() {
     }
 
     parts.push(selectedFinishingEffect.prompt);
+
+    // 適用具合を追加
+    const intensityOption = INTENSITY_OPTIONS.find(opt => opt.id === finishingIntensity);
+    if (intensityOption) {
+      parts.push(intensityOption.promptEn);
+    }
+
     parts.push('Maintain high quality and professional appearance.');
 
     return parts.join('\n');
-  }, [selectedFinishingEffect, finishingApplyScope, finishingPartialText]);
+  }, [selectedFinishingEffect, finishingApplyScope, finishingPartialText, finishingIntensity]);
 
   // 現在のプロンプト（タブによって切り替え）
   const currentPrompt = activeTab === 'effect' ? generatedPrompt : finishingGeneratedPrompt;
@@ -242,6 +260,7 @@ export function GiraGiraPage() {
     setSelectedFinishingEffect(null);
     setFinishingApplyScope('all');
     setFinishingPartialText('');
+    setFinishingIntensity('normal');
   };
 
   // 日時フォーマット
@@ -569,6 +588,37 @@ export function GiraGiraPage() {
                     />
                     <p className="text-xs text-red-600 mt-1">
                       「{finishingPartialText || '○○'}」の周りにエフェクトが付きます
+                    </p>
+                  </div>
+                )}
+
+                {/* 適用具合（最終仕上げタブのみ） */}
+                {activeTab === 'finishing' && (
+                  <div>
+                    <label className="block text-xs text-gray-500 mb-2">
+                      適用具合
+                    </label>
+                    <div className="flex gap-2">
+                      {INTENSITY_OPTIONS.map((option) => (
+                        <button
+                          key={option.id}
+                          onClick={() => setFinishingIntensity(option.id)}
+                          className={`
+                            flex-1 px-3 py-2 rounded-lg text-sm font-medium transition-all
+                            ${finishingIntensity === option.id
+                              ? 'bg-red-500 text-white'
+                              : 'bg-gray-100 text-gray-600 hover:bg-red-100'
+                            }
+                          `}
+                        >
+                          {option.labelJa}
+                        </button>
+                      ))}
+                    </div>
+                    <p className="text-xs text-gray-500 mt-1">
+                      {finishingIntensity === 'subtle' && '効果を控えめに適用します'}
+                      {finishingIntensity === 'normal' && '標準的な強さで効果を適用します'}
+                      {finishingIntensity === 'strong' && '効果を大げさに適用します'}
                     </p>
                   </div>
                 )}
