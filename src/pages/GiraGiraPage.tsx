@@ -124,12 +124,13 @@ export function GiraGiraPage() {
 
     if (finishingApplyScope === 'all') {
       parts.push('Add the following finishing effect to the entire image:');
+      parts.push(selectedFinishingEffect.prompt);
     } else {
-      const target = finishingPartialText.trim() || 'the specified area';
-      parts.push(`Add the following finishing effect to "${target}":`);
+      const target = finishingPartialText.trim() || 'the subject';
+      parts.push(`Add the following finishing effect directly surrounding and attached to "${target}" (NOT to the background):`);
+      parts.push(selectedFinishingEffect.prompt);
+      parts.push(`IMPORTANT: The effect must be visually connected to and surrounding "${target}" itself, not placed in the background or behind it.`);
     }
-
-    parts.push(selectedFinishingEffect.prompt);
 
     // 適用具合を追加
     const intensityOption = INTENSITY_OPTIONS.find(opt => opt.id === finishingIntensity);
