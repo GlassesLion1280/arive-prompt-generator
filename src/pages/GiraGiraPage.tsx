@@ -25,6 +25,35 @@ const INTENSITY_OPTIONS: { id: IntensityLevel; labelJa: string; promptEn: string
   { id: 'strong', labelJa: '大げさ', promptEn: 'Apply the effect dramatically and intensely. Make it bold and prominent.' },
 ];
 
+// カラー色相の種類
+type ColorHue = 'none' | 'red' | 'orange' | 'yellow' | 'green' | 'blue' | 'purple' | 'pink' | 'white' | 'black';
+
+// カラー色相のオプション
+const COLOR_HUE_OPTIONS: { id: ColorHue; labelJa: string; colorCode: string; promptEn: string }[] = [
+  { id: 'none', labelJa: '指定なし', colorCode: '', promptEn: '' },
+  { id: 'red', labelJa: '赤', colorCode: '#ef4444', promptEn: 'red' },
+  { id: 'orange', labelJa: 'オレンジ', colorCode: '#f97316', promptEn: 'orange' },
+  { id: 'yellow', labelJa: '黄', colorCode: '#eab308', promptEn: 'yellow' },
+  { id: 'green', labelJa: '緑', colorCode: '#22c55e', promptEn: 'green' },
+  { id: 'blue', labelJa: '青', colorCode: '#3b82f6', promptEn: 'blue' },
+  { id: 'purple', labelJa: '紫', colorCode: '#a855f7', promptEn: 'purple' },
+  { id: 'pink', labelJa: 'ピンク', colorCode: '#ec4899', promptEn: 'pink' },
+  { id: 'white', labelJa: '白', colorCode: '#ffffff', promptEn: 'white' },
+  { id: 'black', labelJa: '黒', colorCode: '#1f2937', promptEn: 'black' },
+];
+
+// カラートーンの種類
+type ColorTone = 'none' | 'vivid' | 'pastel' | 'dark' | 'metallic';
+
+// カラートーンのオプション
+const COLOR_TONE_OPTIONS: { id: ColorTone; labelJa: string; promptEn: string }[] = [
+  { id: 'none', labelJa: '指定なし', promptEn: '' },
+  { id: 'vivid', labelJa: '鮮やか', promptEn: 'vivid and saturated' },
+  { id: 'pastel', labelJa: 'パステル', promptEn: 'soft pastel' },
+  { id: 'dark', labelJa: 'ダーク', promptEn: 'dark and deep' },
+  { id: 'metallic', labelJa: 'メタリック', promptEn: 'metallic and shiny' },
+];
+
 // カテゴリバッジの色
 const categoryColors: Record<EffectCategory, string> = {
   all: 'bg-gray-100 text-gray-700',
@@ -82,6 +111,8 @@ export function GiraGiraPage() {
   const [finishingApplyScope, setFinishingApplyScope] = useState<'all' | 'partial'>('all');
   const [finishingPartialText, setFinishingPartialText] = useState('');
   const [finishingIntensity, setFinishingIntensity] = useState<IntensityLevel>('normal');
+  const [finishingColorHue, setFinishingColorHue] = useState<ColorHue>('none');
+  const [finishingColorTone, setFinishingColorTone] = useState<ColorTone>('none');
 
   const [copySuccess, setCopySuccess] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
@@ -132,6 +163,20 @@ export function GiraGiraPage() {
       parts.push(`IMPORTANT: The effect must be visually connected to and surrounding "${target}" itself, not placed in the background or behind it.`);
     }
 
+    // カラー設定を追加
+    if (finishingColorHue !== 'none') {
+      const hueOption = COLOR_HUE_OPTIONS.find(opt => opt.id === finishingColorHue);
+      const toneOption = COLOR_TONE_OPTIONS.find(opt => opt.id === finishingColorTone);
+
+      if (hueOption && hueOption.promptEn) {
+        if (toneOption && toneOption.promptEn) {
+          parts.push(`Use ${toneOption.promptEn} ${hueOption.promptEn} color for the effect.`);
+        } else {
+          parts.push(`Use ${hueOption.promptEn} color for the effect.`);
+        }
+      }
+    }
+
     // 適用具合を追加
     const intensityOption = INTENSITY_OPTIONS.find(opt => opt.id === finishingIntensity);
     if (intensityOption) {
@@ -141,7 +186,7 @@ export function GiraGiraPage() {
     parts.push('Maintain high quality and professional appearance.');
 
     return parts.join('\n');
-  }, [selectedFinishingEffect, finishingApplyScope, finishingPartialText, finishingIntensity]);
+  }, [selectedFinishingEffect, finishingApplyScope, finishingPartialText, finishingIntensity, finishingColorHue, finishingColorTone]);
 
   // 現在のプロンプト（タブによって切り替え）
   const currentPrompt = activeTab === 'effect' ? generatedPrompt : finishingGeneratedPrompt;
@@ -262,6 +307,8 @@ export function GiraGiraPage() {
     setFinishingApplyScope('all');
     setFinishingPartialText('');
     setFinishingIntensity('normal');
+    setFinishingColorHue('none');
+    setFinishingColorTone('none');
   };
 
   // 日時フォーマット
@@ -376,6 +423,75 @@ export function GiraGiraPage() {
                 )}
               </div>
             </div>
+
+            {/* カラー選択（最終仕上げタブのみ） */}
+            {activeTab === 'finishing' && (
+              <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-200">
+                <h2 className="text-sm font-medium text-gray-500 mb-3">
+                  🎨 カラー設定
+                </h2>
+
+                {/* 色相選択 */}
+                <div className="mb-3">
+                  <label className="block text-xs text-gray-500 mb-2">色相</label>
+                  <div className="flex flex-wrap gap-2">
+                    {COLOR_HUE_OPTIONS.map((option) => (
+                      <button
+                        key={option.id}
+                        onClick={() => setFinishingColorHue(option.id)}
+                        className={`
+                          px-3 py-1.5 rounded-full text-sm font-medium transition-all flex items-center gap-1
+                          ${finishingColorHue === option.id
+                            ? 'bg-red-500 text-white shadow-md'
+                            : 'bg-gray-100 text-gray-600 hover:bg-red-100'
+                          }
+                        `}
+                      >
+                        {option.colorCode && (
+                          <span
+                            className="w-3 h-3 rounded-full inline-block border border-gray-300"
+                            style={{ backgroundColor: option.colorCode }}
+                          />
+                        )}
+                        {option.labelJa}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* トーン選択（色相が指定されている場合のみ表示） */}
+                {finishingColorHue !== 'none' && (
+                  <div>
+                    <label className="block text-xs text-gray-500 mb-2">トーン</label>
+                    <div className="flex flex-wrap gap-2">
+                      {COLOR_TONE_OPTIONS.map((option) => (
+                        <button
+                          key={option.id}
+                          onClick={() => setFinishingColorTone(option.id)}
+                          className={`
+                            px-3 py-1.5 rounded-full text-sm font-medium transition-all
+                            ${finishingColorTone === option.id
+                              ? 'bg-red-500 text-white shadow-md'
+                              : 'bg-gray-100 text-gray-600 hover:bg-red-100'
+                            }
+                          `}
+                        >
+                          {option.labelJa}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* 選択中のカラー表示 */}
+                {finishingColorHue !== 'none' && (
+                  <div className="mt-3 text-xs text-gray-500">
+                    選択中: {COLOR_HUE_OPTIONS.find(o => o.id === finishingColorHue)?.labelJa}
+                    {finishingColorTone !== 'none' && `（${COLOR_TONE_OPTIONS.find(o => o.id === finishingColorTone)?.labelJa}）`}
+                  </div>
+                )}
+              </div>
+            )}
 
             {/* エフェクト一覧 */}
             <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-200">
