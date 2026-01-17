@@ -26,7 +26,7 @@ const INTENSITY_OPTIONS: { id: IntensityLevel; labelJa: string; promptEn: string
 ];
 
 // カラー色相の種類
-type ColorHue = 'none' | 'red' | 'orange' | 'yellow' | 'green' | 'blue' | 'purple' | 'pink' | 'white' | 'black';
+type ColorHue = 'none' | 'red' | 'orange' | 'yellow' | 'green' | 'blue' | 'purple' | 'pink' | 'white' | 'black' | 'gold' | 'silver' | 'rainbow';
 
 // カラー色相のオプション
 const COLOR_HUE_OPTIONS: { id: ColorHue; labelJa: string; colorCode: string; promptEn: string }[] = [
@@ -40,6 +40,9 @@ const COLOR_HUE_OPTIONS: { id: ColorHue; labelJa: string; colorCode: string; pro
   { id: 'pink', labelJa: 'ピンク', colorCode: '#ec4899', promptEn: 'pink' },
   { id: 'white', labelJa: '白', colorCode: '#ffffff', promptEn: 'white' },
   { id: 'black', labelJa: '黒', colorCode: '#1f2937', promptEn: 'black' },
+  { id: 'gold', labelJa: '金', colorCode: '#fbbf24', promptEn: 'golden' },
+  { id: 'silver', labelJa: '銀', colorCode: '#9ca3af', promptEn: 'silver' },
+  { id: 'rainbow', labelJa: '虹色', colorCode: 'linear-gradient(90deg, #ef4444, #f97316, #eab308, #22c55e, #3b82f6, #a855f7)', promptEn: 'rainbow-colored, iridescent' },
 ];
 
 // カラートーンの種類
@@ -450,7 +453,7 @@ export function GiraGiraPage() {
                         {option.colorCode && (
                           <span
                             className="w-3 h-3 rounded-full inline-block border border-gray-300"
-                            style={{ backgroundColor: option.colorCode }}
+                            style={{ background: option.colorCode }}
                           />
                         )}
                         {option.labelJa}
