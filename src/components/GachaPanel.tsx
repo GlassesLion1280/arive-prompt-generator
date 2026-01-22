@@ -1,5 +1,6 @@
 import { useState, useCallback } from 'react';
 import { usePromptStore } from '../store/promptStore';
+import { useGachaStore } from '../store/gachaStore';
 import { runGacha, getGachaModeLabel, getGachaModeIcon, type GachaMode } from '../utils/gachaGenerator';
 import { getCategoryById } from '../data/categories';
 import type { SelectedOptions } from '../types';
@@ -20,6 +21,7 @@ export function GachaPanel() {
   // 固定をONにした時点の選択状態を記憶
   const [lockedSnapshot, setLockedSnapshot] = useState<SelectedOptions>({});
   const { setSelectedOptions, selectedOptions } = usePromptStore();
+  const { getExcludedSet, getExcludedCount } = useGachaStore();
 
   // 現在のモードに関連する選択済みオプションを取得
   const getOptionsForMode = useCallback((options: SelectedOptions): SelectedOptions => {
@@ -89,8 +91,11 @@ export function GachaPanel() {
       // 固定オプションを取得（lockSelectedがONの場合、スナップショットを使用）
       const lockedOptions = lockSelected ? lockedSnapshot : undefined;
 
+      // 除外オプションを取得
+      const excludedOptions = getExcludedSet();
+
       // ガチャを実行
-      const gachaResult = runGacha(selectedMode, lockedOptions);
+      const gachaResult = runGacha(selectedMode, lockedOptions, excludedOptions);
 
       // 共通設定を維持しつつガチャ結果をマージ
       const mergedOptions = {
@@ -209,6 +214,11 @@ export function GachaPanel() {
 
       <p className="text-xs text-purple-500 mt-2 text-center">
         ランダムでプロンプトを生成します
+        {getExcludedCount() > 0 && (
+          <span className="block text-red-400 mt-1">
+            ({getExcludedCount()}件の項目を除外中)
+          </span>
+        )}
       </p>
     </div>
   );

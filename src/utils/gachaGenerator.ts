@@ -71,12 +71,25 @@ function pickRandomMultiple<T>(array: T[], count: number): T[] {
 
 // ガチャを実行してSelectedOptionsを生成
 // lockedOptions: 固定するオプション（これらのカテゴリはガチャで変更されない）
-export function runGacha(mode: GachaMode, lockedOptions?: SelectedOptions): SelectedOptions {
+// excludedOptions: 除外するオプション（`${categoryId}:${optionId}` 形式のSet）
+export function runGacha(
+  mode: GachaMode,
+  lockedOptions?: SelectedOptions,
+  excludedOptions?: Set<string>
+): SelectedOptions {
   const config = GACHA_CONFIG[mode];
   const result: SelectedOptions = {};
 
   // 固定されているカテゴリIDのセット
   const lockedCategoryIds = new Set(Object.keys(lockedOptions || {}));
+
+  // 除外オプションをフィルタリングするヘルパー関数
+  const filterExcluded = (categoryId: string, options: typeof config.categories[0]['options']) => {
+    if (!excludedOptions || excludedOptions.size === 0) {
+      return options;
+    }
+    return options.filter((opt) => !excludedOptions.has(`${categoryId}:${opt.id}`));
+  };
 
   // 必須カテゴリから選択（ただし固定されている場合はスキップ）
   for (const categoryId of config.required) {
@@ -85,9 +98,12 @@ export function runGacha(mode: GachaMode, lockedOptions?: SelectedOptions): Sele
       continue;
     }
     const category = config.categories.find((c) => c.id === categoryId);
-    if (category && category.options.length > 0) {
-      const option = pickRandom(category.options);
-      result[categoryId] = [option.id];
+    if (category) {
+      const availableOptions = filterExcluded(categoryId, category.options);
+      if (availableOptions.length > 0) {
+        const option = pickRandom(availableOptions);
+        result[categoryId] = [option.id];
+      }
     }
   }
 
@@ -97,9 +113,12 @@ export function runGacha(mode: GachaMode, lockedOptions?: SelectedOptions): Sele
 
   for (const categoryId of selectedOptionalCategories) {
     const category = config.categories.find((c) => c.id === categoryId);
-    if (category && category.options.length > 0) {
-      const option = pickRandom(category.options);
-      result[categoryId] = [option.id];
+    if (category) {
+      const availableOptions = filterExcluded(categoryId, category.options);
+      if (availableOptions.length > 0) {
+        const option = pickRandom(availableOptions);
+        result[categoryId] = [option.id];
+      }
     }
   }
 

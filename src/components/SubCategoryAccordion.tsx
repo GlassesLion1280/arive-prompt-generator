@@ -20,6 +20,7 @@ export function SubCategoryAccordion({ category }: SubCategoryAccordionProps) {
   return (
     <Accordion title={title} isOpen={isOpen} onToggle={() => toggleSubCategory(category.id)}>
       <OptionButtonGrid
+        categoryId={category.id}
         options={category.options}
         selectedIds={selectedIds}
         onToggle={(optionId) => toggleOption(category.id, optionId)}
