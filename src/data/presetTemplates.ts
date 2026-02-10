@@ -238,18 +238,18 @@ export const PRESET_TEMPLATES: PresetTemplate[] = [
   {
     id: 'tmpl-3d-character',
     name: '3Dキャラクター',
-    description: 'Pixar風3Dスタイル',
+    description: '3Dアニメーション風スタイル',
     category: 'creative',
     selectedModel: 'midjourney',
     selectedOptions: {
       'gender-count': ['gender-woman-1'],
       'age': ['age-early-20s'],
-      'style-3dcg': ['3d-pixar'],
+      'style-3dcg': ['3d-cartoon'],
       'imp-emotion': ['emo-joy'],
       'aspect-ratio': ['ar-16-9'],
     },
     outputLanguage: 'en',
-    freeText: '3D render, Pixar style, cute character',
+    freeText: '3D render, stylized 3D cartoon, cute character',
     showNegativePrompt: false,
   },
   {
