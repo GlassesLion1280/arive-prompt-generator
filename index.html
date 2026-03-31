@@ -19,7 +19,7 @@
       </div>
     </div>
     <script>
-    const PW_HASH="b99b47f7f2ee863db0f22accc15aa2ed1715b5c300bb53612aaef2ce403a2a07";
+    const PW_HASH="030b6a3a755125e26faa1b21e043065fe67f6a607df669480a42eb8d4368fa27";
     async function sha256(t){const b=await crypto.subtle.digest("SHA-256",new TextEncoder().encode(t));return Array.from(new Uint8Array(b)).map(x=>x.toString(16).padStart(2,"0")).join("")}
     async function checkPw(){const h=await sha256(document.getElementById("pw-input").value);if(h===PW_HASH){localStorage.setItem("arive-pg-auth",h);document.getElementById("password-gate").style.display="none"}else{document.getElementById("pw-error").style.display="block"}}
     if(localStorage.getItem("arive-pg-auth")===PW_HASH){document.getElementById("password-gate").style.display="none"}else{document.getElementById("pw-input").focus()}
